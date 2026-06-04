@@ -1,7 +1,7 @@
 import { apiFetch } from '../api.js';
 import { store } from '../store.js';
 import { goto } from '../router.js';
-import { escapeHtml, formatCurrency, showMyQrModal, triggerCoinRain, showScratchCardModal, showToast } from '../utils.js';
+import { escapeHtml, formatCurrency, showMyQrModal, triggerCoinRain, showScratchCardModal, showToast, showContactDrawer } from '../utils.js';
 
 // Live count-up animation helper function
 function animateCounter(element, start, end, duration = 1100) {
@@ -390,8 +390,7 @@ export async function renderDashboard() {
         `;
         
         item.addEventListener('click', () => {
-          store.qrPrefill = { toEmail: contact.email };
-          goto('send');
+          showContactDrawer(contact, color);
         });
         
         const avatar = item.querySelector('.contact-avatar');

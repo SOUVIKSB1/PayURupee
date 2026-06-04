@@ -37,4 +37,25 @@ const login = async (req, res) => {
   res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role, balance: user.balance } });
 };
 
-module.exports = { register, login };
+const resetPassword = async (req, res) => {
+  const { email, password, confirmPassword } = req.body;
+  if (!email || !password || !confirmPassword) {
+    return res.status(400).json({ message: 'Missing fields' });
+  }
+  if (password !== confirmPassword) {
+    return res.status(400).json({ message: 'Passwords do not match' });
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user) {
+    return res.status(404).json({ message: 'User not found with this email' });
+  }
+
+  const hashed = await bcrypt.hash(password, 10);
+  user.password = hashed;
+  await user.save();
+
+  res.json({ message: 'Password reset successful' });
+};
+
+module.exports = { register, login, resetPassword };

@@ -56,25 +56,29 @@ export function renderUpload() {
       </div>
       
       <!-- Video Live Camera Scanner container -->
-      <div id="camera-viewport" class="camera-viewport" style="position: relative; width: 100%; aspect-ratio: 4/3; max-height: 380px; background: #000; border-radius: 20px; overflow: hidden; border: 1.5px solid rgba(255,255,255,0.08); box-shadow: inset 0 0 40px rgba(0,0,0,0.8), 0 8px 32px rgba(0,0,0,0.4); margin-bottom: 24px;">
+      <div id="camera-viewport" class="camera-viewport" style="position: relative; width: 100%; aspect-ratio: 1; max-height: 380px; background: #000; border-radius: 20px; overflow: hidden; border: 1.5px solid rgba(255,255,255,0.08); box-shadow: inset 0 0 40px rgba(0,0,0,0.8), 0 8px 32px rgba(0,0,0,0.4); margin-bottom: 24px;">
         
-        <!-- Classic camera bracket overlays -->
-        <div class="scanner-bracket" style="top: 16px; left: 16px; border-width: 3px 0 0 3px; border-top-left-radius: 4px;"></div>
-        <div class="scanner-bracket" style="top: 16px; right: 16px; border-width: 3px 3px 0 0; border-top-right-radius: 4px;"></div>
-        <div class="scanner-bracket" style="bottom: 16px; left: 16px; border-width: 0 0 3px 3px; border-bottom-left-radius: 4px;"></div>
-        <div class="scanner-bracket" style="bottom: 16px; right: 16px; border-width: 0 3px 3px 0; border-bottom-right-radius: 4px;"></div>
-
         <!-- Video element -->
-        <video id="preview-video" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 18px;" playsinline></video>
-        <canvas id="preview-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; border-radius: 18px;"></canvas>
+        <video id="preview-video" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" playsinline></video>
+        <canvas id="preview-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; z-index: 2;" fill-style="cover"></canvas>
         
-        <!-- Scanner Laser Sweep animation line -->
-        <div id="scanner-laser" class="scanner-laser hidden" style="position: absolute; height: 3px; left: 0; right: 0; background: linear-gradient(90deg, transparent, var(--accent1), transparent); box-shadow: 0 0 15px var(--accent1); pointer-events: none; z-index: 5;"></div>
+        <!-- Scanner cutout overlay (GPay style) -->
+        <div id="scanner-cutout" style="display: none; position: absolute; inset: 0; margin: auto; width: min(220px, 60%); height: min(220px, 60%); border-radius: 16px; box-shadow: 0 0 0 9999px rgba(8, 8, 10, 0.7); z-index: 3; pointer-events: none; border: 1px solid rgba(255,255,255,0.15);">
+          <!-- Brackets relative to cutout -->
+          <div class="scanner-bracket" style="top: -2px; left: -2px; border-width: 4px 0 0 4px; border-top-left-radius: 8px;"></div>
+          <div class="scanner-bracket" style="top: -2px; right: -2px; border-width: 4px 4px 0 0; border-top-right-radius: 8px;"></div>
+          <div class="scanner-bracket" style="bottom: -2px; left: -2px; border-width: 0 0 4px 4px; border-bottom-left-radius: 8px;"></div>
+          <div class="scanner-bracket" style="bottom: -2px; right: -2px; border-width: 0 4px 4px 0; border-bottom-right-radius: 8px;"></div>
+          
+          <!-- Scanner Laser Sweep animation line -->
+          <div id="scanner-laser" class="scanner-laser hidden" style="position: absolute; height: 3px; left: 10px; right: 10px; background: linear-gradient(90deg, transparent, var(--accent1), transparent); box-shadow: 0 0 15px var(--accent1); pointer-events: none; z-index: 5;"></div>
+        </div>
+
         <!-- Scan successful camera flash overlay -->
         <div id="scan-flash" class="scan-flash" style="position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity 0.15s ease-out; z-index: 12;"></div>
         
         <!-- Placeholder when camera is inactive -->
-        <div id="camera-placeholder" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--muted); background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%);">
+        <div id="camera-placeholder" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--muted); background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%); z-index: 4;">
           <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 18px; border-radius: 50%; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
           </div>
@@ -162,6 +166,8 @@ export function renderUpload() {
         videoEl.style.display = 'block';
       }
       if (placeholder) placeholder.style.display = 'none';
+      const cutout = document.getElementById('scanner-cutout');
+      if (cutout) cutout.style.display = 'block';
       if (laser) laser.classList.remove('hidden');
       if (toggleCamBtn) {
         toggleCamBtn.textContent = 'Stop Camera';
@@ -196,6 +202,8 @@ export function renderUpload() {
       videoEl.style.display = 'none';
     }
     if (placeholder) placeholder.style.display = 'flex';
+    const cutout = document.getElementById('scanner-cutout');
+    if (cutout) cutout.style.display = 'none';
     if (laser) laser.classList.add('hidden');
     if (toggleCamBtn) {
       toggleCamBtn.textContent = 'Start Camera Scan';

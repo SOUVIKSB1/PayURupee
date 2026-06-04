@@ -885,9 +885,308 @@ export function showScratchCardModal(reward) {
   canvas.addEventListener('touchmove', scratch);
   window.addEventListener('touchend', () => { isDrawing = false; });
   
-  modal.querySelector('#scratch-close').addEventListener('click', () => overlay.remove());
+}
+
+export async function showContactDrawer(contact, color = '#ff7a00') {
+  if (!store.user) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'bottom-sheet-drawer';
+  
+  const drawer = document.createElement('div');
+  drawer.className = 'bottom-sheet-content';
+  
+  const initial = String(contact.name || contact.email || '?').charAt(0).toUpperCase();
+  
+  drawer.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:12px; margin-bottom:16px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width: 44px; height: 44px; border-radius: 50%; background: ${color}22; border: 1.5px solid ${color}; color: ${color}; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800;">
+          ${initial}
+        </div>
+        <div>
+          <h3 style="margin:0; font-size:16px; color:#fff;">${escapeHtml(contact.name || 'PayU₹upee Contact')}</h3>
+          <p class="smallmuted" style="margin:2px 0 0; font-size:12px;">${escapeHtml(contact.email)}</p>
+        </div>
+      </div>
+      <button id="drawer-close" class="close-btn" style="background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer;">&times;</button>
+    </div>
+
+    <!-- Quick Action Section -->
+    <div style="display:flex; gap:12px; margin-bottom:16px;">
+      <button class="btn primary" id="drawer-btn-send" style="flex:1; padding:10px; font-weight:700; border-radius:10px; font-size:13px;">Send Money</button>
+      <button class="btn ghost" id="drawer-btn-request" style="flex:1; padding:10px; font-weight:700; border-radius:10px; border-color:rgba(255,255,255,0.08); color:#fff; font-size:13px;">Request</button>
+    </div>
+
+    <!-- Send money panel inside drawer (collapsible) -->
+    <div id="drawer-send-panel" style="display:none; background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); border-radius:12px; padding:12px; margin-bottom:16px;">
+      <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
+        <input type="number" id="drawer-send-amount" class="input" placeholder="Amount (₹)" style="margin-bottom:0; flex:1;" />
+        <input type="text" id="drawer-send-note" class="input" placeholder="Note" style="margin-bottom:0; flex:1.5;" />
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn ghost" id="drawer-send-cancel" style="padding:6px 12px; font-size:12px; border-radius:8px; color:#fff; border-color:rgba(255,255,255,0.08);">Cancel</button>
+        <button class="btn primary" id="drawer-send-pay" style="padding:6px 16px; font-size:12px; font-weight:700; border-radius:8px;">Pay Now</button>
+      </div>
+    </div>
+
+    <!-- Request money panel inside drawer (collapsible) -->
+    <div id="drawer-request-panel" style="display:none; background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); border-radius:12px; padding:12px; margin-bottom:16px;">
+      <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
+        <input type="number" id="drawer-req-amount" class="input" placeholder="Request Amount (₹)" style="margin-bottom:0; flex:1;" />
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn ghost" id="drawer-req-cancel" style="padding:6px 12px; font-size:12px; border-radius:8px; color:#fff; border-color:rgba(255,255,255,0.08);">Cancel</button>
+        <button class="btn solid-blue" id="drawer-req-submit" style="padding:6px 16px; font-size:12px; font-weight:700; border-radius:8px; background:var(--accent2); color:#fff; border:none;">Request</button>
+      </div>
+    </div>
+
+    <!-- Chat / Recent Activity Thread -->
+    <div style="flex:1; display:flex; flex-direction:column; min-height:180px; background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); border-radius:14px; overflow:hidden; margin-bottom:16px;">
+      <div style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04); font-size:11px; font-weight:700; color:var(--muted);">CHAT & ACTIVITY</div>
+      <div id="drawer-chat-list" style="flex:1; padding:12px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; max-height:220px;">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+
+    <!-- Message Send Input bar -->
+    <div style="display:flex; gap:8px; align-items:center;">
+      <input type="text" id="drawer-msg-input" class="input" placeholder="Type a message..." style="margin-bottom:0; flex:1;" />
+      <button class="btn primary" id="drawer-btn-send-msg" style="padding:12px; border-radius:12px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+      </button>
+    </div>
+  `;
+
+  overlay.appendChild(drawer);
+  document.body.appendChild(overlay);
+
+  const msgInput = drawer.querySelector('#drawer-msg-input');
+  if (msgInput) msgInput.focus();
+
+  const closeBtn = drawer.querySelector('#drawer-close');
+  closeBtn.addEventListener('click', () => overlay.remove());
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.remove();
   });
+
+  const sendPanel = drawer.querySelector('#drawer-send-panel');
+  const reqPanel = drawer.querySelector('#drawer-request-panel');
+  const btnSend = drawer.querySelector('#drawer-btn-send');
+  const btnRequest = drawer.querySelector('#drawer-btn-request');
+
+  btnSend.addEventListener('click', () => {
+    reqPanel.style.display = 'none';
+    sendPanel.style.display = sendPanel.style.display === 'none' ? 'block' : 'none';
+    if (sendPanel.style.display === 'block') {
+      drawer.querySelector('#drawer-send-amount').focus();
+    }
+  });
+
+  btnRequest.addEventListener('click', () => {
+    sendPanel.style.display = 'none';
+    reqPanel.style.display = reqPanel.style.display === 'none' ? 'block' : 'none';
+    if (reqPanel.style.display === 'block') {
+      drawer.querySelector('#drawer-req-amount').focus();
+    }
+  });
+
+  drawer.querySelector('#drawer-send-cancel').addEventListener('click', () => {
+    sendPanel.style.display = 'none';
+  });
+
+  drawer.querySelector('#drawer-req-cancel').addEventListener('click', () => {
+    reqPanel.style.display = 'none';
+  });
+
+  const payBtn = drawer.querySelector('#drawer-send-pay');
+  payBtn.addEventListener('click', async () => {
+    const amtInput = drawer.querySelector('#drawer-send-amount');
+    const noteInput = drawer.querySelector('#drawer-send-note');
+    const amount = Number(amtInput.value);
+    const note = noteInput.value.trim();
+
+    if (!amount || amount <= 0) {
+      showToast('Enter a valid amount', 'error');
+      return;
+    }
+
+    payBtn.disabled = true;
+    payBtn.textContent = 'Paying...';
+
+    try {
+      const result = await apiFetch('/wallet/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toEmail: contact.email, amount, note })
+      });
+
+      showToast(`Successfully paid ₹${amount.toFixed(2)} to ${contact.name || contact.email}`, 'success');
+      
+      if (result && result.user) {
+        store.user = result.user;
+        localStorage.setItem('ewallet_user', JSON.stringify(store.user));
+        if (window.__onAuthChange) window.__onAuthChange();
+      }
+
+      amtInput.value = '';
+      noteInput.value = '';
+      sendPanel.style.display = 'none';
+
+      await loadChatHistory();
+    } catch (err) {
+      showToast(err.message || 'Payment failed', 'error');
+    } finally {
+      payBtn.disabled = false;
+      payBtn.textContent = 'Pay Now';
+    }
+  });
+
+  const submitReqBtn = drawer.querySelector('#drawer-req-submit');
+  submitReqBtn.addEventListener('click', () => {
+    const amtInput = drawer.querySelector('#drawer-req-amount');
+    const amount = Number(amtInput.value);
+    if (!amount || amount <= 0) {
+      showToast('Enter a valid amount', 'error');
+      return;
+    }
+
+    const msg = `Requested ₹${amount.toFixed(2)}`;
+    saveLocalMessage(msg, true);
+    
+    amtInput.value = '';
+    reqPanel.style.display = 'none';
+    showToast(`Request of ₹${amount.toFixed(2)} sent to ${contact.name || contact.email}`, 'success');
+    loadChatHistory();
+  });
+
+  const msgSendBtn = drawer.querySelector('#drawer-btn-send-msg');
+  msgSendBtn.addEventListener('click', () => {
+    const text = msgInput.value.trim();
+    if (!text) return;
+    
+    saveLocalMessage(text, false);
+    msgInput.value = '';
+    loadChatHistory();
+  });
+
+  msgInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      msgSendBtn.click();
+    }
+  });
+
+  const msgKey = `chat_msg_${store.user._id}_${contact.email}`;
+  function saveLocalMessage(text, isRequest = false) {
+    const history = JSON.parse(localStorage.getItem(msgKey) || '[]');
+    history.push({
+      id: 'msg_' + Date.now(),
+      text,
+      isRequest,
+      sender: store.user.email,
+      timestamp: new Date().toISOString()
+    });
+    localStorage.setItem(msgKey, JSON.stringify(history));
+  }
+
+  const chatListEl = drawer.querySelector('#drawer-chat-list');
+  async function loadChatHistory() {
+    chatListEl.innerHTML = '<div class="smallmuted" style="text-align:center; padding:12px;">Loading activity...</div>';
+    
+    try {
+      const txRes = await apiFetch('/wallet/history');
+      const allTx = txRes.data || [];
+      const matchedTx = allTx.filter(tx => {
+        const toEmail = tx.to?.email || tx.meta?.toEmail || tx.meta?.recipientEmail;
+        const fromEmail = tx.from?.email;
+        return toEmail === contact.email || fromEmail === contact.email;
+      });
+
+      const stashedMsgs = JSON.parse(localStorage.getItem(msgKey) || '[]');
+
+      const timeline = [];
+      matchedTx.forEach(tx => {
+        timeline.push({
+          type: 'tx',
+          date: new Date(tx.createdAt),
+          data: tx
+        });
+      });
+      stashedMsgs.forEach(msg => {
+        timeline.push({
+          type: 'msg',
+          date: new Date(msg.timestamp),
+          data: msg
+        });
+      });
+
+      timeline.sort((a, b) => a.date - b.date);
+
+      if (timeline.length === 0) {
+        chatListEl.innerHTML = '<div class="smallmuted" style="text-align:center; padding:20px; font-size:12px;">No activity yet. Send a payment or a message!</div>';
+        return;
+      }
+
+      chatListEl.innerHTML = '';
+      timeline.forEach(item => {
+        const dateStr = item.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        if (item.type === 'tx') {
+          const tx = item.data;
+          const isDebit = tx.from?.email === store.user.email || tx.from === store.user._id;
+          const amtStr = (isDebit ? '-' : '+') + formatCurrency(tx.amount);
+          const color = isDebit ? '#ff5c6c' : '#00d26a';
+          
+          const bubble = document.createElement('div');
+          bubble.style.alignSelf = isDebit ? 'flex-end' : 'flex-start';
+          bubble.style.background = isDebit ? 'rgba(255, 122, 0, 0.08)' : 'rgba(0, 162, 255, 0.08)';
+          bubble.style.border = isDebit ? '1px solid rgba(255, 122, 0, 0.15)' : '1px solid rgba(0, 162, 255, 0.15)';
+          bubble.style.padding = '8px 12px';
+          bubble.style.borderRadius = isDebit ? '14px 14px 2px 14px' : '14px 14px 14px 2px';
+          bubble.style.maxWidth = '80%';
+          bubble.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+          
+          bubble.innerHTML = `
+            <div style="font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">${isDebit ? 'Sent Payment' : 'Received Payment'}</div>
+            <div style="font-size:15px; font-weight:800; color:${color};">${amtStr}</div>
+            ${tx.meta?.note ? `<div style="font-size:11.5px; color:#fff; margin-top:4px;">${escapeHtml(tx.meta.note)}</div>` : ''}
+            <div style="font-size:9.5px; color:var(--muted); text-align:right; margin-top:4px;">${dateStr}</div>
+          `;
+          chatListEl.appendChild(bubble);
+        } else {
+          const msg = item.data;
+          const isMine = msg.sender === store.user.email;
+          
+          const bubble = document.createElement('div');
+          bubble.style.alignSelf = isMine ? 'flex-end' : 'flex-start';
+          bubble.style.background = msg.isRequest 
+            ? 'rgba(124, 92, 255, 0.1)' 
+            : (isMine ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.02)');
+          bubble.style.border = msg.isRequest 
+            ? '1px solid rgba(124, 92, 255, 0.2)' 
+            : '1px solid rgba(255, 255, 255, 0.06)';
+          bubble.style.padding = '8px 12px';
+          bubble.style.borderRadius = isMine ? '14px 14px 2px 14px' : '14px 14px 14px 2px';
+          bubble.style.maxWidth = '80%';
+          
+          bubble.innerHTML = `
+            ${msg.isRequest ? `<div style="font-size:10px; font-weight:700; color:#7c5cff; margin-bottom:2px;">MONEY REQUEST</div>` : ''}
+            <div style="font-size:12.5px; color:#fff; word-break:break-word;">${escapeHtml(msg.text)}</div>
+            <div style="font-size:9.5px; color:var(--muted); text-align:right; margin-top:4px;">${dateStr}</div>
+          `;
+          chatListEl.appendChild(bubble);
+        }
+      });
+
+      setTimeout(() => {
+        chatListEl.scrollTop = chatListEl.scrollHeight;
+      }, 50);
+      
+    } catch (err) {
+      chatListEl.innerHTML = `<div class="err" style="text-align:center; padding:12px;">Failed to load timeline</div>`;
+    }
+  }
+
+  await loadChatHistory();
 }
 
