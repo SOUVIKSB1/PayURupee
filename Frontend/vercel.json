@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://ewallet-backend.onrender.com/api/:path*"
+      "destination": "https://payu-upee.onrender.com/api/:path*"
     }
   ]
 }

@@ -25,6 +25,8 @@ async function start() {
       }
       throw err;
     });
+
+    startWarmer();
   } catch (err) {
     console.error('Failed to connect to database:', err.message);
     console.log('\nStarting server without database connection...');
@@ -36,6 +38,24 @@ async function start() {
       console.log(`⚠ Database connection failed - some features will not work`);
       console.log('='.repeat(50));
     });
+    
+    startWarmer();
+  }
+}
+
+function startWarmer() {
+  const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
+  if (RENDER_URL) {
+    console.log(`✓ Keep-alive warmer initialized for: ${RENDER_URL}`);
+    // Ping every 10 minutes (600,000 ms) to keep the Render free tier container active
+    setInterval(() => {
+      const http = RENDER_URL.startsWith('https') ? require('https') : require('http');
+      http.get(`${RENDER_URL}/health`, (res) => {
+        console.log(`[Keep-Alive Warmer] Self-ping status code: ${res.statusCode}`);
+      }).on('error', (err) => {
+        console.error('[Keep-Alive Warmer] Self-ping failed:', err.message);
+      });
+    }, 10 * 60 * 1000);
   }
 }
 
