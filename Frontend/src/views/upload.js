@@ -32,6 +32,16 @@ export function renderUpload() {
         height: 28px;
         opacity: 1;
       }
+      @media (max-width: 440px) {
+        .modal-actions-preview {
+          flex-direction: column;
+          gap: 8px !important;
+        }
+        .modal-actions-preview button {
+          width: 100% !important;
+          flex: 1 1 auto !important;
+        }
+      }
     `;
     document.head.appendChild(styleEl);
   }
@@ -384,7 +394,7 @@ function showQrPreview(parsed, file, raw, dataUrl) {
       </div>
     </div>
     
-    <div style="display: flex; gap: 8px;">
+    <div class="modal-actions-preview" style="display: flex; gap: 8px;">
       <button class="btn primary" id="qr-accept" style="flex: 1.2; padding: 12px; font-weight: 700; border-radius: 10px;">Accept & Pay</button>
       <button class="btn ghost" id="qr-edit" style="flex: 0.8; padding: 12px; font-weight: 600; border-radius: 10px; border-color: rgba(255,255,255,0.08); color: #fff;">Edit</button>
       <button class="btn ghost" id="qr-cancel" style="flex: 0.8; padding: 12px; font-weight: 600; border-radius: 10px; border-color: rgba(255,255,255,0.08); color: #fff;">Cancel</button>
