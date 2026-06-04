@@ -50,10 +50,10 @@ export async function renderHistory() {
               const amt = (isDebit ? '-' : '+') + formatCurrency(tx.amount);
               const amtColor = isDebit ? '#ff5c6c' : '#00d26a';
               return `<tr class="tx-row" data-index="${idx}" style="cursor: pointer;">
-                <td style="white-space: nowrap;">${dt}</td>
-                <td>${type}</td>
-                <td style="min-width: 150px;">${escapeHtml(detailText)}</td>
-                <td><strong style="color: ${amtColor}">${amt}</strong></td>
+                <td data-label="Date" style="white-space: nowrap;">${dt}</td>
+                <td data-label="Type">${type}</td>
+                <td data-label="Details" style="min-width: 150px;">${escapeHtml(detailText)}</td>
+                <td data-label="Amount"><strong style="color: ${amtColor}">${amt}</strong></td>
               </tr>`;
             }).join('')}
           </tbody>

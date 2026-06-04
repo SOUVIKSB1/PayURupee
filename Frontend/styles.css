@@ -1050,6 +1050,50 @@ input[type="file"].input::file-selector-button{
     display: none !important;
   }
 
+  /* Prevent child elements from stretching card boundary */
+  .card {
+    overflow: hidden !important;
+  }
+
+  /* Transform tables into clean vertical stacks on mobile */
+  .table, .table thead, .table tbody, .table th, .table td, .table tr {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+  .table thead {
+    display: none !important;
+  }
+  .table tr {
+    margin-bottom: 12px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transform: none !important;
+  }
+  .table td {
+    padding: 6px 0 !important;
+    border: none !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center;
+    font-size: 13px;
+    text-align: right !important;
+  }
+  .table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    text-align: left;
+    margin-right: 12px;
+  }
+
   /* Scan & Pay Page mobile adjustments */
   .scan-card {
     padding: 16px !important;
