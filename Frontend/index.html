@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>-Nexus Pay</title>
+  <title>Pay U ₹upee</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -16,25 +16,78 @@
       </div>
     </div>
     <header class="topbar">
-      <div class="brand">Nexus Pay</div>
-      <button id="nav-toggle" class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">☰</button>
-      <nav class="nav" id="main-nav">
-        <button id="nav-dashboard" class="nav-btn">Dashboard</button>
-        <button id="nav-send" class="nav-btn">Send</button>
-        <button id="nav-topup" class="nav-btn">Top Up</button>
-        <button id="nav-upload" class="nav-btn">Upload QR</button>
-        <button id="nav-bills" class="nav-btn">Bills</button>
-        <button id="nav-history" class="nav-btn">History</button>
-        <button id="nav-admin" class="nav-btn hidden">Admin</button>
+      <!-- Mobile Profile Avatar (visible only on mobile) -->
+      <div id="user-profile-wrap-mob" class="user-profile-wrap mobile-only hidden">
+        <div id="user-avatar-mob" class="user-avatar" title="User Menu"></div>
+      </div>
+
+      <div class="brand">PayU₹upee</div>
+      
+      <!-- Primary navigation on desktop -->
+      <nav class="nav desktop-only" id="main-nav">
+        <button id="nav-dashboard" class="nav-btn">
+          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+          <span>Dashboard</span>
+        </button>
+        <button id="nav-send" class="nav-btn">
+          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          <span>Send</span>
+        </button>
+        <button id="nav-topup" class="nav-btn">
+          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+          <span>Top Up</span>
+        </button>
+        <button id="nav-upload" class="nav-btn">
+          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect><rect x="14" y="14" width="3" height="3"></rect></svg>
+          <span>Scan & Pay</span>
+        </button>
+        <button id="nav-bills" class="nav-btn">
+          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M19 4v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+          <span>Bills</span>
+        </button>
+        <button id="nav-history" class="nav-btn">
+          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span>History</span>
+        </button>
+        <button id="nav-admin" class="nav-btn hidden">
+          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span>Admin</span>
+        </button>
       </nav>
-      <div class="auth-area" id="auth-area">
-        <span id="user-info"></span>
-        <!-- Demo mode toggle (controls Top Up demo vs real confirm) -->
-        <button id="dev-mode-toggle" class="small ghost" title="Toggle demo mode">Demo: ON</button>
-        <button id="api-settings-btn" class="small ghost" title="Configure Backend API URL">⚙ API</button>
-        <button id="btn-login" class="small">Login</button>
-        <button id="btn-register" class="small">Register</button>
-        <button id="btn-logout" class="small hidden">Logout</button>
+      
+      <div class="topbar-right">
+        <!-- Settings & Auth toggles -->
+        <div class="desktop-only auth-area" id="auth-area">
+          <button id="dev-mode-toggle" class="small-btn ghost" title="Toggle demo mode">Demo: ON</button>
+          <button id="api-settings-btn" class="small-btn ghost" title="Configure Backend API URL">⚙ API</button>
+          <button id="btn-login" class="small-btn solid">Login</button>
+          <button id="btn-register" class="small-btn solid-blue">Register</button>
+          <button id="btn-logout" class="small-btn ghost hidden">Logout</button>
+        </div>
+
+        <!-- Notification bell & Dropdown wrapper -->
+        <div class="notifications-wrapper">
+          <button class="icon-btn" id="btn-notifications" title="Notifications" aria-label="Notifications">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bell-icon"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            <span class="notification-badge" style="display: none;"></span>
+          </button>
+          
+          <div id="notifications-dropdown" class="dropdown-panel hidden">
+            <div class="dropdown-header">
+              <h3>Notifications</h3>
+              <button id="btn-clear-notifications" class="small-btn">Clear All</button>
+            </div>
+            <div id="notifications-list" class="dropdown-list">
+              <!-- Dynamically populated or empty message -->
+            </div>
+          </div>
+        </div>
+        
+        <!-- User profile wrap (always visible when logged in) -->
+        <div id="user-profile-wrap" class="user-profile-wrap desktop-only hidden">
+          <span id="user-info" class="desktop-only"></span>
+          <div id="user-avatar" class="user-avatar" title="User Menu"></div>
+        </div>
       </div>
     </header>
 
@@ -42,9 +95,63 @@
       <!-- Views injected by JS -->
     </main>
 
-    <footer class="footer">
-      <small> &lt;Souvik ./&gt;</small>
-    </footer>
+    <!-- Sticky Bottom Navigation Bar for Mobile -->
+    <nav class="mobile-bottom-nav mobile-only hidden" id="mobile-bottom-nav">
+      <button id="m-nav-dashboard" class="m-nav-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <span>Home</span>
+      </button>
+      <button id="m-nav-send" class="m-nav-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        <span>Send</span>
+      </button>
+      
+      <!-- Prominent Scan & Pay Button -->
+      <button id="m-nav-upload" class="m-nav-btn scan-pay-btn">
+        <div class="scan-btn-inner">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect><rect x="14" y="14" width="3" height="3"></rect></svg>
+        </div>
+        <span>Scan & Pay</span>
+      </button>
+      
+      <button id="m-nav-bills" class="m-nav-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M19 4v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+        <span>Bills</span>
+      </button>
+      <button id="m-nav-history" class="m-nav-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span>History</span>
+      </button>
+    </nav>
+
+    <!-- Mobile Profile / Settings Sheet Overlay -->
+    <div id="profile-sheet-mob" class="profile-sheet hidden">
+      <div class="profile-sheet-content">
+        <div class="profile-sheet-header">
+          <h3>Account & Settings</h3>
+          <button id="btn-close-profile-sheet" class="close-btn">&times;</button>
+        </div>
+        <div class="profile-sheet-body">
+          <div class="user-meta">
+            <div id="sheet-avatar" class="user-avatar large"></div>
+            <div class="user-details">
+              <h4 id="sheet-user-name"></h4>
+              <p id="sheet-user-role" class="smallmuted"></p>
+            </div>
+          </div>
+          <div class="sheet-actions">
+            <button id="sheet-show-my-qr" class="sheet-btn">Show My QR Code</button>
+            <button id="sheet-dev-mode-toggle" class="sheet-btn">Demo: ON</button>
+            <button id="sheet-api-settings-btn" class="sheet-btn">⚙ Configure API Base URL</button>
+            <button id="sheet-nav-admin" class="sheet-btn hidden">🛡 Admin Panel</button>
+            <button id="sheet-btn-logout" class="sheet-btn danger">Logout</button>
+          </div>
+          <div style="text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 11.5px; color: var(--muted); font-weight: 600;">
+            Designed & Developed with ❤️ by <span style="color: var(--accent1);">Souvik Sinhababu</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Stripe JS (for client-side card collection) -->

@@ -1,0 +1,12 @@
+{
+  "name": "ewallet-root",
+  "version": "1.0.0",
+  "description": "E-Wallet Workspace Root Orchestrator",
+  "scripts": {
+    "install": "npm install --prefix Backend",
+    "start": "npm start --prefix Backend",
+    "dev": "npm run dev --prefix Backend",
+    "seed-admin": "npm run seed-admin --prefix Backend",
+    "clear-db": "npm run clear-db --prefix Backend"
+  }
+}

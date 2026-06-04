@@ -38,10 +38,17 @@ export function renderRegister() {
       });
       setAuth(json.token, json.user);
       msg.textContent = 'Account created';
-      goto('dashboard');
+      if (localStorage.getItem('checkout_params')) {
+        goto('checkout');
+      } else {
+        goto('dashboard');
+      }
     } catch (err) {
       msg.textContent = err.message;
       msg.classList.add('err');
     }
   });
+  
+  // Set initial focus to the first input field
+  document.querySelector('input[name="name"]')?.focus();
 }

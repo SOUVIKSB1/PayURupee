@@ -1,8 +1,9 @@
 import { apiFetch } from '../api.js';
 import { setAuth } from '../store.js';
 import { goto } from '../router.js';
+import { escapeHtml } from '../utils.js';
 
-export function renderLogin() {
+export function renderLogin(errorMsg = '') {
   const main = document.getElementById('main');
   main.innerHTML = `
     <div class="card center fade-in" style="max-width:460px;margin:24px auto">
@@ -16,7 +17,7 @@ export function renderLogin() {
           <button class="btn" type="submit">Sign in</button>
           <button type="button" class="btn ghost" id="to-register">Create account</button>
         </div>
-        <div id="login-msg" class="smallmuted" style="margin-top:8px"></div>
+        <div id="login-msg" class="${errorMsg ? 'smallmuted err' : 'smallmuted'}" style="margin-top:8px">${errorMsg ? escapeHtml(errorMsg) : ''}</div>
       </form>
     </div>
   `;
@@ -37,10 +38,17 @@ export function renderLogin() {
       });
       setAuth(json.token, json.user);
       msg.textContent = 'Welcome, ' + json.user.name;
-      goto('dashboard');
+      if (localStorage.getItem('checkout_params')) {
+        goto('checkout');
+      } else {
+        goto('dashboard');
+      }
     } catch (err) {
       msg.textContent = err.message;
       msg.classList.add('err');
     }
   });
+  
+  // Set initial focus to the first input field
+  document.querySelector('input[name="email"]')?.focus();
 }

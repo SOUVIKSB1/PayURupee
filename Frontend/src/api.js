@@ -51,12 +51,12 @@ export async function apiFetch(path, options = {}) {
       // If it's valid JSON, check for HTTP error statuses and return parsed object
       const json = text ? JSON.parse(text) : {};
       if (!res.ok) {
-        throw new Error(json.message || (json.error && json.error.message) || ('Request failed: ' + res.status));
+        throw new Error(json.message || (json.error && json.error.message) || `Request failed with status ${res.status}: ${text}`);
       }
       return json;
     } catch (err) {
       // Fallback for non-JSON response data
-      if (!res.ok) throw new Error('Request failed: ' + res.status);
+      if (!res.ok) throw new Error(`Request failed with status ${res.status}: ${text || 'Empty response'}`);
       return text;
     }
   } catch (err) {

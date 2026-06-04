@@ -1,5 +1,6 @@
 import { apiFetch } from '../api.js';
 import { escapeHtml, formatCurrency } from '../utils.js';
+import { goto } from '../router.js';
 
 export async function renderHistory() {
   const main = document.getElementById('main');
@@ -29,17 +30,65 @@ export async function renderHistory() {
           </tr>
         </thead>
         <tbody>
-          ${data.map(tx => {
+          ${data.map((tx, idx) => {
             const dt = new Date(tx.createdAt).toLocaleString();
-            const type = escapeHtml(tx.type);
-            const details = escapeHtml(tx.meta?.note || tx.meta?.provider || tx._id || '');
-            const amt = (tx.type === 'send' ? '-' : '') + formatCurrency(tx.amount);
-            return `<tr><td>${dt}</td><td>${type}</td><td>${details}</td><td><strong>${amt}</strong></td></tr>`;
+            const type = escapeHtml(tx.type === 'send' ? 'Sent Money' : tx.type === 'bill' ? 'Bill Payment' : tx.type === 'topup' ? 'Added Money' : tx.type);
+            
+            let detailText = '';
+            if (tx.type === 'send') {
+              detailText = `To: ${tx.to?.email || tx.meta?.toEmail || tx.meta?.recipientEmail || 'N/A'}`;
+            } else if (tx.type === 'receive') {
+              detailText = `From: ${tx.from?.email || 'N/A'}`;
+            } else if (tx.type === 'bill') {
+              detailText = `Provider: ${tx.meta?.provider || 'N/A'}`;
+            } else {
+              detailText = tx.meta?.note || '';
+            }
+            
+            const isDebit = tx.type === 'send' || tx.type === 'bill';
+            const amt = (isDebit ? '-' : '+') + formatCurrency(tx.amount);
+            const amtColor = isDebit ? '#ff5c6c' : '#00d26a';
+            return `<tr class="tx-row" data-index="${idx}" style="cursor: pointer;">
+              <td>${dt}</td>
+              <td>${type}</td>
+              <td>${escapeHtml(detailText)}</td>
+              <td><strong style="color: ${amtColor}">${amt}</strong></td>
+            </tr>`;
           }).join('')}
         </tbody>
       </table>
     `;
     container.innerHTML = html;
+
+    container.querySelectorAll('.tx-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const idx = parseInt(row.getAttribute('data-index'));
+        const tx = data[idx];
+        if (tx) {
+          let providerCode = '';
+          let consumerNumber = '';
+          let toEmail = '';
+          let note = tx.meta?.note || '';
+          
+          if (tx.type === 'bill') {
+            providerCode = tx.meta?.provider || '';
+            consumerNumber = tx.meta?.consumerNumber || tx.meta?.consumerNo || '';
+          } else if (tx.type === 'send') {
+            toEmail = tx.to?.email || tx.meta?.toEmail || tx.meta?.recipientEmail || '';
+          }
+          
+          goto('receipt', {
+            transaction: tx,
+            providerCode,
+            consumerNumber,
+            amount: tx.amount,
+            type: tx.type === 'send' ? 'send' : 'bill',
+            toEmail,
+            note
+          });
+        }
+      });
+    });
   } catch (err) {
     document.getElementById('tx-list').innerHTML = `<div class="err">${escapeHtml(err.message)}</div>`;
   }

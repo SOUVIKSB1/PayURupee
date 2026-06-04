@@ -2,7 +2,18 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const permit = require('../middleware/roles');
-const { listUsers, listTransactions, createProvider } = require('../controllers/adminController');
+const {
+  listUsers,
+  listTransactions,
+  createProvider,
+  deleteProvider,
+  awardReward,
+  adjustBalance,
+  getSettings,
+  updateSettings,
+  toggleBlockUser,
+  listAuditLogs
+} = require('../controllers/adminController');
 
 router.use(auth);
 router.use(permit('admin'));
@@ -10,5 +21,12 @@ router.use(permit('admin'));
 router.get('/users', listUsers);
 router.get('/transactions', listTransactions);
 router.post('/provider', createProvider);
+router.delete('/provider/:id', deleteProvider);
+router.post('/award-reward', awardReward);
+router.post('/adjust-balance', adjustBalance);
+router.get('/settings', getSettings);
+router.post('/settings', updateSettings);
+router.post('/users/:id/block', toggleBlockUser);
+router.get('/audit-logs', listAuditLogs);
 
 module.exports = router;

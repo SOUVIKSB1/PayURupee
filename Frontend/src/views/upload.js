@@ -1,28 +1,276 @@
 import { apiFetch } from '../api.js';
 import { store } from '../store.js';
 import { goto } from '../router.js';
-import { escapeHtml, parseQrPayload } from '../utils.js';
+import { escapeHtml, parseQrPayload, playScanBeepSound, showMyQrModal } from '../utils.js';
 
 export function renderUpload() {
   const main = document.getElementById('main');
+  
+  // Inject custom CSS styling specifically for modern-classic elements
+  const styleId = 'scan-pay-custom-styles';
+  if (!document.getElementById(styleId)) {
+    const styleEl = document.createElement('style');
+    styleEl.id = styleId;
+    styleEl.innerHTML = `
+      #qr-drag-drop:hover {
+        background: rgba(255, 255, 255, 0.025) !important;
+        border-color: var(--accent1) !important;
+      }
+      .scanner-bracket {
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        border-color: var(--accent1);
+        border-style: solid;
+        pointer-events: none;
+        z-index: 10;
+        opacity: 0.8;
+        transition: all 0.3s ease;
+      }
+      .camera-viewport:hover .scanner-bracket {
+        width: 28px;
+        height: 28px;
+        opacity: 1;
+      }
+    `;
+    document.head.appendChild(styleEl);
+  }
+
   main.innerHTML = `
-    <div class="card upload fade-in" style="max-width:640px;margin:12px auto">
-      <h2>Upload QR</h2>
-      <p class="smallmuted">Upload a QR image from your device</p>
-      <form id="form-qr" style="margin-top:12px">
-        <input type="file" name="qr" accept="image/*" class="input" />
-        <div style="margin-top:10px;display:flex;gap:8px">
-          <button class="btn" type="submit">Upload</button>
-          <button type="button" class="btn ghost" id="qr-back">Back</button>
+    <div class="card fade-in" style="max-width: 600px; margin: 24px auto; padding: 28px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+      
+      <!-- Header -->
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h2 style="margin: 0; font-size: 26px; font-weight: 800; background: linear-gradient(135deg, #ffffff, #a1a1aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px;">Scan & Pay</h2>
+        <p class="smallmuted" style="margin-top: 4px; font-size: 13px;">Hold QR code in front of the camera or upload an image</p>
+      </div>
+      
+      <!-- Video Live Camera Scanner container -->
+      <div id="camera-viewport" class="camera-viewport" style="position: relative; width: 100%; aspect-ratio: 4/3; max-height: 380px; background: #000; border-radius: 20px; overflow: hidden; border: 1.5px solid rgba(255,255,255,0.08); box-shadow: inset 0 0 40px rgba(0,0,0,0.8), 0 8px 32px rgba(0,0,0,0.4); margin-bottom: 24px;">
+        
+        <!-- Classic camera bracket overlays -->
+        <div class="scanner-bracket" style="top: 16px; left: 16px; border-width: 3px 0 0 3px; border-top-left-radius: 4px;"></div>
+        <div class="scanner-bracket" style="top: 16px; right: 16px; border-width: 3px 3px 0 0; border-top-right-radius: 4px;"></div>
+        <div class="scanner-bracket" style="bottom: 16px; left: 16px; border-width: 0 0 3px 3px; border-bottom-left-radius: 4px;"></div>
+        <div class="scanner-bracket" style="bottom: 16px; right: 16px; border-width: 0 3px 3px 0; border-bottom-right-radius: 4px;"></div>
+
+        <!-- Video element -->
+        <video id="preview-video" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 18px;" playsinline></video>
+        <canvas id="preview-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; border-radius: 18px;"></canvas>
+        
+        <!-- Scanner Laser Sweep animation line -->
+        <div id="scanner-laser" class="scanner-laser hidden" style="position: absolute; height: 3px; left: 0; right: 0; background: linear-gradient(90deg, transparent, var(--accent1), transparent); box-shadow: 0 0 15px var(--accent1); pointer-events: none; z-index: 5;"></div>
+        <!-- Scan successful camera flash overlay -->
+        <div id="scan-flash" class="scan-flash" style="position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity 0.15s ease-out; z-index: 12;"></div>
+        
+        <!-- Placeholder when camera is inactive -->
+        <div id="camera-placeholder" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--muted); background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%);">
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 18px; border-radius: 50%; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          </div>
+          <div style="font-size: 13px; font-weight: 500; letter-spacing: 0.5px;">CAMERA INTERFACE OFFLINE</div>
         </div>
-        <div id="qr-msg" style="margin-top:8px"></div>
+      </div>
+      
+      <!-- Camera control actions -->
+      <div style="margin-bottom: 24px; display: flex; gap: 12px;">
+        <button type="button" class="btn primary" id="btn-toggle-camera" style="flex: 1; padding: 14px; font-weight: 700; border-radius: 12px; box-shadow: 0 4px 12px rgba(255,122,0,0.15);">Start Camera Scan</button>
+        <button type="button" class="btn ghost" id="scan-my-qr" style="flex: 1; padding: 14px; font-weight: 600; border-radius: 12px; border-color: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; gap: 8px; color: #fff;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect><rect x="14" y="14" width="3" height="3"></rect></svg>
+          Show My QR
+        </button>
+      </div>
+
+      <!-- Upload Section Title Separator -->
+      <div style="text-align: center; position: relative; margin-bottom: 24px;">
+        <span style="background: #08080a; padding: 0 14px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: 1px; position: relative; z-index: 2;">OR UPLOAD DIRECTLY</span>
+        <hr style="position: absolute; top: 50%; left: 0; right: 0; border: none; border-top: 1px dashed rgba(255,255,255,0.08); margin: 0; z-index: 1;" />
+      </div>
+
+      <!-- Image Decode Upload -->
+      <form id="form-qr" style="display: flex; flex-direction: column; gap: 14px;">
+        <div id="qr-drag-drop" style="border: 2px dashed rgba(255,255,255,0.1); background: rgba(255,255,255,0.01); border-radius: 14px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.2s ease;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px; opacity: 0.7;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          <div style="font-size: 13px; font-weight: 600; color: #fff;">Choose QR code image</div>
+          <div class="smallmuted" style="font-size: 11px; margin-top: 4px;">Supports PNG, JPG, JPEG</div>
+          <input type="file" name="qr" id="file-qr-input" accept="image/*" style="display: none;" />
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button class="btn primary" type="submit" style="flex: 1; padding: 13px; border-radius: 12px; font-weight: 700;">Decode & Proceed</button>
+          <button type="button" class="btn ghost" id="qr-back" style="flex: 0.4; padding: 13px; border-radius: 12px; border-color: rgba(255,255,255,0.08); color: #fff;">Back</button>
+        </div>
+        <div id="qr-msg" style="margin-top: 4px; font-size: 13px; text-align: center;"></div>
       </form>
     </div>
   `;
   
-  document.getElementById('qr-back').addEventListener('click', () => goto('dashboard'));
+  let stream = null;
+  let animFrameId = null;
+  let videoEl = document.getElementById('preview-video');
+  let canvasEl = document.getElementById('preview-canvas');
+  let ctx = canvasEl ? canvasEl.getContext('2d') : null;
+  
+  const placeholder = document.getElementById('camera-placeholder');
+  const laser = document.getElementById('scanner-laser');
+  const flash = document.getElementById('scan-flash');
+  const toggleCamBtn = document.getElementById('btn-toggle-camera');
+  const msg = document.getElementById('qr-msg');
+  const showMyQrBtn = document.getElementById('scan-my-qr');
+  const dragDropArea = document.getElementById('qr-drag-drop');
+  const fileInput = document.getElementById('file-qr-input');
+  
+  showMyQrBtn.addEventListener('click', () => {
+    stopCamera();
+    showMyQrModal();
+  });
+
+  if (dragDropArea && fileInput) {
+    dragDropArea.addEventListener('click', () => {
+      fileInput.click();
+    });
+    
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files && fileInput.files[0]) {
+        const name = fileInput.files[0].name;
+        const infoEl = dragDropArea.querySelector('div:nth-of-type(2)');
+        if (infoEl) infoEl.textContent = `Selected: ${name}`;
+      }
+    });
+  }
+  
+  async function startCamera() {
+    try {
+      msg.textContent = '';
+      msg.className = '';
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
+      });
+      
+      if (videoEl) {
+        videoEl.srcObject = stream;
+        videoEl.style.display = 'block';
+      }
+      if (placeholder) placeholder.style.display = 'none';
+      if (laser) laser.classList.remove('hidden');
+      if (toggleCamBtn) {
+        toggleCamBtn.textContent = 'Stop Camera';
+        toggleCamBtn.className = 'btn danger';
+        toggleCamBtn.style.boxShadow = 'none';
+      }
+      
+      if (videoEl) {
+        await videoEl.play();
+        animFrameId = requestAnimationFrame(tick);
+      }
+    } catch (err) {
+      console.error('Camera access failed', err);
+      msg.textContent = 'Failed to access camera. Check browser permissions.';
+      msg.className = 'err';
+      stopCamera();
+    }
+  }
+  
+  function stopCamera() {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+    }
+    if (animFrameId) {
+      cancelAnimationFrame(animFrameId);
+      animFrameId = null;
+    }
+    if (videoEl) {
+      videoEl.pause();
+      videoEl.srcObject = null;
+      videoEl.style.display = 'none';
+    }
+    if (placeholder) placeholder.style.display = 'flex';
+    if (laser) laser.classList.add('hidden');
+    if (toggleCamBtn) {
+      toggleCamBtn.textContent = 'Start Camera Scan';
+      toggleCamBtn.className = 'btn primary';
+      toggleCamBtn.style.boxShadow = '0 4px 12px rgba(255,122,0,0.15)';
+    }
+    if (canvasEl && ctx) {
+      ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+    }
+  }
+  
+  function drawLine(begin, end, color) {
+    if (!ctx) return;
+    ctx.beginPath();
+    ctx.moveTo(begin.x, begin.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = color;
+    ctx.stroke();
+  }
+  
+  function drawRect(location, color) {
+    drawLine(location.topLeftCorner, location.topRightCorner, color);
+    drawLine(location.topRightCorner, location.bottomRightCorner, color);
+    drawLine(location.bottomRightCorner, location.bottomLeftCorner, color);
+    drawLine(location.bottomLeftCorner, location.topLeftCorner, color);
+  }
+  
+  function tick() {
+    if (videoEl && videoEl.readyState === videoEl.HAVE_ENOUGH_DATA && canvasEl && ctx) {
+      canvasEl.width = videoEl.videoWidth;
+      canvasEl.height = videoEl.videoHeight;
+      ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+      
+      const imgData = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
+      const code = window.jsQR ? jsQR(imgData.data, canvasEl.width, canvasEl.height) : null;
+      
+      if (code) {
+        drawRect(code.location, '#00d26a');
+        
+        if (code.data) {
+          playScanBeepSound();
+          if (flash) flash.classList.add('active');
+          
+          cancelAnimationFrame(animFrameId);
+          animFrameId = null;
+          
+          if (stream) {
+            stream.getVideoTracks().forEach(track => track.enabled = false);
+          }
+          
+          if (laser) laser.classList.add('hidden');
+          
+          setTimeout(() => {
+            const parsed = parseQrPayload(code.data);
+            stopCamera();
+            if (flash) flash.classList.remove('active');
+            showQrPreview(parsed || {}, null, code.data, null);
+          }, 350);
+          return;
+        }
+      }
+    }
+    
+    if (stream) {
+      animFrameId = requestAnimationFrame(tick);
+    }
+  }
+  
+  toggleCamBtn.addEventListener('click', () => {
+    if (stream) {
+      stopCamera();
+    } else {
+      startCamera();
+    }
+  });
+
+  document.getElementById('qr-back').addEventListener('click', () => {
+    stopCamera();
+    goto('dashboard');
+  });
+
   document.getElementById('form-qr').addEventListener('submit', async (e) => {
     e.preventDefault();
+    stopCamera();
     const fileInput = e.target.qr;
     const msg = document.getElementById('qr-msg');
     if (!fileInput.files || fileInput.files.length === 0) {
@@ -64,7 +312,7 @@ export function renderUpload() {
       const imageData = ctx.getImageData(0, 0, w, h);
       const qr = window.jsQR ? jsQR(imageData.data, w, h) : null;
       if (!qr || !qr.data) {
-        msg.textContent = 'No QR code detected in image (client-side)';
+        msg.textContent = 'No QR code detected in image';
         msg.className = 'err';
         return;
       }
@@ -84,29 +332,57 @@ export function renderUpload() {
       msg.className = 'err';
     }
   });
+
+  window.__currentViewCleanup = () => {
+    stopCamera();
+  };
 }
 
 function showQrPreview(parsed, file, raw, dataUrl) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   const modal = document.createElement('div');
-  modal.className = 'modal';
+  
+  modal.className = 'modal fade-in';
+  modal.style.background = '#08080a';
+  modal.style.border = '1px solid rgba(255,255,255,0.08)';
+  modal.style.borderRadius = '20px';
+  modal.style.padding = '24px';
+  modal.style.maxWidth = '460px';
+  modal.style.boxShadow = '0 24px 64px rgba(0,0,0,0.8)';
+  
   modal.innerHTML = `
-    <div class="header"><h3>QR Preview</h3><button class="close" id="qr-close">✕</button></div>
-    <div style="display:block;gap:12px;align-items:center">
-      <div>
-        <div class="row"><div class="label">Name</div><div class="value">${escapeHtml(parsed.name || '—')}</div></div>
-        <div class="row"><div class="label">Email / UPI</div><div class="value">${escapeHtml(parsed.email || '—')}</div></div>
-        <div class="row"><div class="label">Amount</div><div class="value">${escapeHtml(parsed.amount || '—')}</div></div>
-        <div class="row"><div class="label">Raw</div><div class="value smallmuted">${escapeHtml(String(raw || '—')).slice(0, 200)}</div></div>
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255,255,255,0.08); padding-bottom: 14px; margin-bottom: 18px;">
+      <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #fff;">QR Payment Preview</h3>
+      <button id="qr-close" style="background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 4px;">✕</button>
+    </div>
+    
+    <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px;">
+      <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 8px;">
+        <span class="smallmuted" style="font-size: 12.5px;">Recipient Name:</span>
+        <strong style="color: #fff; font-size: 13px;">${escapeHtml(parsed.name || '—')}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 8px;">
+        <span class="smallmuted" style="font-size: 12.5px;">UPI ID / Email:</span>
+        <strong style="color: var(--accent1); font-size: 13px;">${escapeHtml(parsed.email || '—')}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 8px;">
+        <span class="smallmuted" style="font-size: 12.5px;">Amount to Pay:</span>
+        <strong style="color: #00d26a; font-size: 15px;">${parsed.amount ? ('₹' + Number(parsed.amount).toFixed(2)) : '—'}</strong>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span class="smallmuted" style="font-size: 11px;">Scanned QR Contents:</span>
+        <span style="font-family: monospace; font-size: 10px; color: var(--muted); background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.04); padding: 8px; border-radius: 8px; word-break: break-all; max-height: 60px; overflow-y: auto;">${escapeHtml(String(raw || '—'))}</span>
       </div>
     </div>
-    <div class="actions">
-      <button class="btn" id="qr-accept">Accept</button>
-      <button class="btn ghost" id="qr-edit">Edit</button>
-      <button class="btn ghost" id="qr-cancel">Cancel</button>
+    
+    <div style="display: flex; gap: 8px;">
+      <button class="btn primary" id="qr-accept" style="flex: 1.2; padding: 12px; font-weight: 700; border-radius: 10px;">Accept & Pay</button>
+      <button class="btn ghost" id="qr-edit" style="flex: 0.8; padding: 12px; font-weight: 600; border-radius: 10px; border-color: rgba(255,255,255,0.08); color: #fff;">Edit</button>
+      <button class="btn ghost" id="qr-cancel" style="flex: 0.8; padding: 12px; font-weight: 600; border-radius: 10px; border-color: rgba(255,255,255,0.08); color: #fff;">Cancel</button>
     </div>
   `;
+  
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
@@ -130,6 +406,8 @@ function showQrPreview(parsed, file, raw, dataUrl) {
     const btn = document.getElementById('qr-accept');
     const msgEl = document.createElement('div');
     msgEl.style.marginTop = '10px';
+    msgEl.style.fontSize = '13px';
+    msgEl.style.color = '#fff';
     modal.appendChild(msgEl);
     btn.disabled = true;
     
@@ -140,7 +418,7 @@ function showQrPreview(parsed, file, raw, dataUrl) {
         const amount = Number(parsed.amount);
         const note = parsed.name ? `Payment for ${parsed.name}` : '';
         
-        await apiFetch('/wallet/send', {
+        const sendRes = await apiFetch('/wallet/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ toEmail, amount, note })
@@ -165,12 +443,18 @@ function showQrPreview(parsed, file, raw, dataUrl) {
           }
         }
         
-        try {
-          const p = await apiFetch('/users/me');
-          store.user = p.user;
+        if (sendRes && sendRes.user) {
+          store.user = sendRes.user;
           localStorage.setItem('ewallet_user', JSON.stringify(store.user));
           if (window.__onAuthChange) window.__onAuthChange();
-        } catch (_) {}
+        } else {
+          try {
+            const p = await apiFetch('/users/me');
+            store.user = p.user;
+            localStorage.setItem('ewallet_user', JSON.stringify(store.user));
+            if (window.__onAuthChange) window.__onAuthChange();
+          } catch (_) {}
+        }
         
         setTimeout(() => {
           cleanup();
@@ -179,7 +463,6 @@ function showQrPreview(parsed, file, raw, dataUrl) {
         return;
       }
 
-      // If missing parameters, redirect to send page with prefill
       store.qrPrefill = {
         toEmail: parsed.email,
         amount: parsed.amount,
@@ -191,6 +474,7 @@ function showQrPreview(parsed, file, raw, dataUrl) {
       console.error('Auto-send failed', err);
       const em = document.createElement('div');
       em.className = 'err';
+      em.style.marginTop = '10px';
       em.textContent = err.message || 'Payment failed';
       modal.appendChild(em);
       btn.disabled = false;

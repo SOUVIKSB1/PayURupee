@@ -31,6 +31,7 @@ const login = async (req, res) => {
 
   const ok = await bcrypt.compare(password, user.password);
   if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
+  if (user.isBlocked) return res.status(403).json({ message: 'Account is blocked. Please contact admin.' });
 
   const token = signToken(user);
   res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role, balance: user.balance } });

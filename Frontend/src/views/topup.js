@@ -1,7 +1,8 @@
 import { apiFetch } from '../api.js';
 import { store } from '../store.js';
 import { goto } from '../router.js';
-import { isDemoMode, showAuthAnimation, showToast, attemptForceDeposit } from '../utils.js';
+import { isDemoMode, showAuthAnimation, showToast, attemptForceDeposit, formatCurrency } from '../utils.js';
+import { addNotification } from '../notifications.js';
 
 export function renderTopUp() {
   const main = document.getElementById('main');
@@ -10,8 +11,8 @@ export function renderTopUp() {
       <h2>Top up wallet</h2>
       <p class="smallmuted">Add money to your wallet using card (Stripe test mode)</p>
       <form id="form-topup" style="margin-top:12px">
-        <input name="amount" required placeholder="Amount (e.g., 500)" type="number" step="0.01" class="input" />
-        <div id="card-element" style="margin-top:12px;padding:12px;border:1px solid #e6e6e6;border-radius:6px"></div>
+         <input name="amount" required placeholder="Amount (e.g., 500)" type="number" step="0.01" class="input" />
+        <div id="card-element" style="margin-bottom:14px;padding:14px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);border-radius:12px"></div>
         <div style="margin-top:10px;display:flex;gap:8px">
           <button class="btn" type="submit">Pay</button>
           <button type="button" class="btn ghost" id="topup-back">Back</button>
@@ -30,10 +31,26 @@ export function renderTopUp() {
     return;
   }
 
-  // Initialize Stripe and mount the Card element
+  // Initialize Stripe and mount the Card element with custom dark theme styling rules
   const stripe = Stripe(publishable);
   const elements = stripe.elements();
-  const card = elements.create('card');
+  const card = elements.create('card', {
+    style: {
+      base: {
+        color: '#ffffff',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        fontSize: '14px',
+        iconColor: '#ff7a00',
+        '::placeholder': {
+          color: '#8e96a3'
+        }
+      },
+      invalid: {
+        color: '#ff5c6c',
+        iconColor: '#ff5c6c'
+      }
+    }
+  });
   card.mount('#card-element');
 
   document.getElementById('form-topup').addEventListener('submit', async (e) => {
@@ -67,6 +84,7 @@ export function renderTopUp() {
               if (window.__onAuthChange) window.__onAuthChange();
             }
             showToast('Demo deposit persisted', 'ok');
+            addNotification(`Successfully topped up ₹${amount.toFixed(2)} (Demo)`, 'success');
             msg.textContent = 'Top up successful (demo)';
             msg.className = 'ok';
             setTimeout(() => goto('dashboard'), 1200);
@@ -112,7 +130,7 @@ export function renderTopUp() {
         // Finalize transaction with Backend
         msg.textContent = 'Finalizing top up...';
         try {
-          await apiFetch('/wallet/deposit/confirm', {
+          const confirmRes = await apiFetch('/wallet/deposit/confirm', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ paymentIntentId })
@@ -120,13 +138,20 @@ export function renderTopUp() {
           msg.textContent = 'Top up successful';
           msg.className = 'ok';
           
-          try {
-            const p = await apiFetch('/users/me');
-            store.user = p.user;
+          if (confirmRes && confirmRes.user) {
+            store.user = confirmRes.user;
             localStorage.setItem('ewallet_user', JSON.stringify(store.user));
             if (window.__onAuthChange) window.__onAuthChange();
-          } catch (_) {}
+          } else {
+            try {
+              const p = await apiFetch('/users/me');
+              store.user = p.user;
+              localStorage.setItem('ewallet_user', JSON.stringify(store.user));
+              if (window.__onAuthChange) window.__onAuthChange();
+            } catch (_) {}
+          }
           
+          addNotification(`Successfully topped up ₹${amount.toFixed(2)}`, 'success');
           setTimeout(() => goto('dashboard'), 1200);
         } catch (e) {
           msg.textContent = e.message || 'Finalize failed';
@@ -141,4 +166,7 @@ export function renderTopUp() {
       msg.className = 'err';
     }
   });
+
+  // Set initial focus to the first input field
+  document.querySelector('input[name="amount"]')?.focus();
 }

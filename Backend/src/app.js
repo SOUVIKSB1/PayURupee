@@ -37,6 +37,10 @@ app.use(express.urlencoded({ extended: false }));
 // static uploads
 app.use('/uploads', express.static(path.join(__dirname, '..', process.env.UPLOAD_DIR || 'uploads')));
 
+// Serve frontend static files
+const frontendPath = path.join(__dirname, '..', '..', 'Frontend');
+app.use(express.static(frontendPath));
+
 // routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -46,6 +50,14 @@ app.use('/api/admin', adminRoutes);
 
 // health
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+// Client-side SPA routing fallback: serve index.html for non-API requests
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/health')) {
+    return next();
+  }
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
 
 // error handler
 app.use(errorHandler);

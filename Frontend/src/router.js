@@ -10,7 +10,7 @@
  * 3. Handles scroll resets and mobile drop-down menu cleanups on route transitions.
  */
 
-import { store } from './store.js';
+import { store, logout } from './store.js';
 import { apiFetch } from './api.js';
 
 /**
@@ -19,12 +19,26 @@ import { apiFetch } from './api.js';
  * 
  * @param {string} route - The target path name ('login', 'dashboard', 'send', etc.).
  */
-export function goto(route) {
+export function goto(route, params = {}) {
   // Reset window scroll offset to the top
   window.scrollTo(0, 0);
+
+  // Clean up previous view resources (e.g. camera streams, intervals)
+  if (window.__currentViewCleanup) {
+    try {
+      window.__currentViewCleanup();
+    } catch (e) {
+      console.warn('View cleanup error:', e);
+    }
+    window.__currentViewCleanup = null;
+  }
+
   
   // Collapse navigation bar menus if open (useful on mobile sizing)
   closeMobileMenu();
+  
+  // Highlight active navbar link
+  updateActiveNavLink(route);
   
   // Switch case mapping path names to view files
   switch (route) {
@@ -35,26 +49,32 @@ export function goto(route) {
       import('./views/register.js').then(m => m.renderRegister());
       break;
     case 'send':
-      authGuard(() => import('./views/send.js').then(m => m.renderSend()));
+      authGuard(() => import('./views/send.js').then(m => m.renderSend()), 'send');
       break;
     case 'topup':
-      authGuard(() => import('./views/topup.js').then(m => m.renderTopUp()));
+      authGuard(() => import('./views/topup.js').then(m => m.renderTopUp()), 'topup');
       break;
     case 'upload':
-      authGuard(() => import('./views/upload.js').then(m => m.renderUpload()));
+      authGuard(() => import('./views/upload.js').then(m => m.renderUpload()), 'upload');
       break;
     case 'bills':
-      authGuard(() => import('./views/bills.js').then(m => m.renderBills()));
+      authGuard(() => import('./views/bills.js').then(m => m.renderBills()), 'bills');
       break;
     case 'history':
-      authGuard(() => import('./views/history.js').then(m => m.renderHistory()));
+      authGuard(() => import('./views/history.js').then(m => m.renderHistory()), 'history');
       break;
     case 'admin':
-      authGuard(() => import('./views/admin.js').then(m => m.renderAdmin()));
+      authGuard(() => import('./views/admin.js').then(m => m.renderAdmin(params.tab || 'users')), 'admin');
+      break;
+    case 'checkout':
+      authGuard(() => import('./views/checkout.js').then(m => m.renderCheckout()), 'checkout');
+      break;
+    case 'receipt':
+      authGuard(() => import('./views/receipt.js').then(m => m.renderReceipt(params.transaction, params.providerCode, params.consumerNumber, params.amount, params.type, params.toEmail, params.note)), 'receipt');
       break;
     default:
       // Redirect undefined paths back to user dashboard panel
-      authGuard(() => import('./views/dashboard.js').then(m => m.renderDashboard()));
+      authGuard(() => import('./views/dashboard.js').then(m => m.renderDashboard()), 'dashboard');
   }
 }
 
@@ -66,8 +86,9 @@ export function goto(route) {
  * updates the local store credentials, and fires the corresponding render view function.
  * 
  * @param {Function} renderFn - Callback renderer execution block.
+ * @param {string} targetRoute - The route name being requested.
  */
-export function authGuard(renderFn) {
+export function authGuard(renderFn, targetRoute = '') {
   if (!store.token) {
     import('./views/login.js').then(m => m.renderLogin());
     return;
@@ -82,12 +103,21 @@ export function authGuard(renderFn) {
     // Notify Topbar components to update profile view
     if (window.__onAuthChange) window.__onAuthChange();
     
-    // Proceed to rendering the authenticated page layout
-    renderFn();
+    // Admin routing lock: force admins to stay on the admin panel
+    if (store.user && store.user.role === 'admin' && targetRoute !== 'admin') {
+      import('./views/admin.js').then(m => m.renderAdmin(window.__currentAdminTab || 'users'));
+    } else {
+      // Proceed to rendering the authenticated page layout
+      renderFn();
+    }
   }).catch(err => {
     console.warn('profile fetch failed', err);
-    // Force redirect to login screen on profile fetch rejection
-    import('./views/login.js').then(m => m.renderLogin());
+    if (err.message && err.message.includes('maintenance')) {
+      import('./views/maintenance.js').then(m => m.renderMaintenance());
+    } else {
+      logout();
+      import('./views/login.js').then(m => m.renderLogin('Session expired — please login again'));
+    }
   });
 }
 
@@ -102,4 +132,29 @@ function closeMobileMenu() {
     if (mainNav) mainNav.classList.remove('open');
     if (navToggle) navToggle.setAttribute('aria-expanded', 'false');
   } catch (_) {}
+}
+
+/**
+ * Highlights the active page navigation button and resolves fallbacks.
+ */
+function updateActiveNavLink(route) {
+  try {
+    const targetRoute = (route === 'login' || route === 'register') ? '' : route;
+    const buttons = document.querySelectorAll('#main-nav .nav-btn, #mobile-bottom-nav .m-nav-btn');
+    buttons.forEach(btn => {
+      btn.classList.remove('active');
+      if (targetRoute === 'admin') {
+        const activeTab = window.__currentAdminTab || 'users';
+        if (btn.id === `nav-admin-${activeTab}` || btn.id === `m-nav-admin-${activeTab}`) {
+          btn.classList.add('active');
+        }
+      } else {
+        if (btn.id === `nav-${targetRoute}` || btn.id === `m-nav-${targetRoute}`) {
+          btn.classList.add('active');
+        }
+      }
+    });
+  } catch (err) {
+    console.warn('Failed to update active link styling', err);
+  }
 }

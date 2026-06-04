@@ -2,6 +2,7 @@ import { apiFetch } from '../api.js';
 import { store, setAuth } from '../store.js';
 import { goto } from '../router.js';
 import { isDemoMode, showStatusOverlay } from '../utils.js';
+import { addNotification } from '../notifications.js';
 
 export function renderSend() {
   const main = document.getElementById('main');
@@ -14,7 +15,7 @@ export function renderSend() {
           <input name="toEmail" required placeholder="Recipient (email or UPI id)" class="input" />
           <input name="amount" required placeholder="Amount (e.g., 500)" type="number" step="0.01" class="input" />
         </div>
-        <div class="smallmuted" style="margin-top:6px">You can paste an email (user@domain) or a UPI id (alice@oksbi) from QR scans</div>
+        <div class="smallmuted" style="margin-top:6px; margin-bottom:12px">You can paste an email (user@domain) or a UPI id (alice@oksbi) from QR scans</div>
         <input name="note" placeholder="Note (optional)" class="input" />
         <div style="margin-top:10px;display:flex;gap:8px">
           <button class="btn" type="submit">Send</button>
@@ -52,7 +53,7 @@ export function renderSend() {
     msg.className = '';
     
     try {
-      if (amount <= 0) {
+      if (isNaN(amount) || amount <= 0) {
         throw new Error('Amount must be greater than 0');
       }
       if (!toEmail) {
@@ -73,20 +74,21 @@ export function renderSend() {
       msg.className = 'ok';
       showStatusOverlay({ type: 'success', message: successMsg });
       
-      if (json.balance !== undefined && store.user) {
+      if (json.user) {
+        store.user = json.user;
+        localStorage.setItem('ewallet_user', JSON.stringify(store.user));
+        if (window.__onAuthChange) window.__onAuthChange();
+      } else if (json.balance !== undefined && store.user) {
         store.user.balance = json.balance;
         localStorage.setItem('ewallet_user', JSON.stringify(store.user));
         if (window.__onAuthChange) window.__onAuthChange();
       }
       
-      try {
-        const p = await apiFetch('/users/me');
-        store.user = p.user;
-        localStorage.setItem('ewallet_user', JSON.stringify(store.user));
-        if (window.__onAuthChange) window.__onAuthChange();
-      } catch (_) {}
+      addNotification(`Sent ₹${amount.toFixed(2)} to ${toEmail}${demoMode ? ' (Demo)' : ''}`, 'success');
       
-      e.target.reset();
+      setTimeout(() => {
+        goto('receipt', { transaction: json.transaction, toEmail, amount, note, type: 'send' });
+      }, 1200);
     } catch (err) {
       console.error('Send money error:', err);
       const raw = (err && err.message) ? String(err.message).toLowerCase() : '';
@@ -110,4 +112,7 @@ export function renderSend() {
       }
     }
   });
+
+  // Set initial focus to the first input field
+  document.querySelector('input[name="toEmail"]')?.focus();
 }

@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const BillProvider = require('../models/billProvider');
 const Transaction = require('../models/transaction');
 const User = require('../models/user');
+const { getRandomReward } = require('../config/settings');
 
 const listProviders = async (req, res) => {
   try {
@@ -63,6 +64,11 @@ const payBill = async (req, res) => {
       }
 
       u.balance -= numericAmount;
+      u.rewards.push({
+        message: `Cashback for ${provider.name || provider.code} Payment`,
+        amount: getRandomReward(),
+        scratched: false
+      });
       
       if (session) {
         await u.save({ session });
@@ -91,7 +97,8 @@ const payBill = async (req, res) => {
         color: 'green',
         message: 'Bill paid successfully',
         transaction: tx,
-        showConfirmation: true
+        showConfirmation: true,
+        user: u
       });
     } catch (innerErr) {
       if (usedSession && session) {

@@ -1,6 +1,7 @@
 const User = require('../models/user');
 const Transaction = require('../models/transaction');
 const { sendMoney } = require('../utils/transactions');
+const { getRandomReward } = require('../config/settings');
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY || '');
 
@@ -45,9 +46,19 @@ const send = async (req, res) => {
       
       // Process payment (balance is sufficient)
       from.balance = Number(from.balance || 0) - amt;
+      from.rewards.push({
+        message: note ? `Cashback for: ${note}` : 'Cashback for Send Money',
+        amount: getRandomReward(),
+        scratched: false
+      });
       await from.save();
       
       recipient.balance = Number(recipient.balance || 0) + amt;
+      recipient.rewards.push({
+        message: `Received cashback from ${from.name || from.email}`,
+        amount: getRandomReward(),
+        scratched: false
+      });
       await recipient.save();
       
       // Create transaction
@@ -60,7 +71,7 @@ const send = async (req, res) => {
       });
       await tx.save();
       
-      return res.json({ message: 'Sent (demo mode)', transaction: tx, balance: from.balance });
+      return res.json({ message: 'Sent (demo mode)', transaction: tx, balance: from.balance, user: from });
     } catch (err) {
       return res.status(500).json({ message: err.message || 'Demo payment failed' });
     }
@@ -69,13 +80,45 @@ const send = async (req, res) => {
   // Production mode - strict validation
   const normalizedEmail = String(toEmail).toLowerCase().trim();
   
-  const recipient = await User.findOne({ email: normalizedEmail });
-  if (!recipient) return res.status(404).json({ message: 'Recipient not found. Please check the email address.' });
+  let recipient = await User.findOne({ email: normalizedEmail });
+  if (!recipient) {
+    recipient = new User({
+      name: toEmail.split('@')[0] || 'New User',
+      email: normalizedEmail,
+      password: '$2b$10$unregistereduserdummyhash',
+      role: 'user',
+      balance: 0
+    });
+    await recipient.save();
+  }
   if (recipient._id.equals(from._id)) return res.status(400).json({ message: 'Cannot send to yourself' });
 
   try {
     const tx = await sendMoney(from._id, recipient._id, Number(amount), { note });
-    res.json({ message: 'Sent', transaction: tx });
+    
+    // Auto reward for sender in production mode
+    const u = await User.findById(from._id);
+    if (u) {
+      u.rewards.push({
+        message: note ? `Cashback for: ${note}` : 'Cashback for Send Money',
+        amount: getRandomReward(),
+        scratched: false
+      });
+      await u.save();
+    }
+
+    // Auto reward for recipient in production mode
+    const r = await User.findById(recipient._id);
+    if (r) {
+      r.rewards.push({
+        message: `Received cashback from ${u ? (u.name || u.email) : 'Sender'}`,
+        amount: getRandomReward(),
+        scratched: false
+      });
+      await r.save();
+    }
+
+    res.json({ message: 'Sent', transaction: tx, user: u });
   } catch (err) {
     // Better error messages
     const errMsg = err.message || 'Transfer failed';
@@ -97,6 +140,8 @@ const history = async (req, res) => {
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
+    .populate('from', 'name email')
+    .populate('to', 'name email')
     .lean();
 
   res.json({ page, limit, data: docs });
@@ -138,6 +183,11 @@ const confirmDeposit = async (req, res) => {
   const amountDecimal = (pi.amount || 0) / 100;
   const u = await User.findById(user._id);
   u.balance = (u.balance || 0) + amountDecimal;
+  u.rewards.push({
+    message: 'Cashback for Top-up',
+    amount: getRandomReward(),
+    scratched: false
+  });
   await u.save();
 
   const tx = new Transaction({
@@ -149,7 +199,7 @@ const confirmDeposit = async (req, res) => {
   });
   await tx.save();
 
-  res.json({ message: 'Deposit credited', transaction: tx });
+  res.json({ message: 'Deposit credited', transaction: tx, user: u });
 };
 
 // Force deposit endpoint for demo/demo-mode: credits user's balance without Stripe verification.
@@ -182,6 +232,11 @@ const forceDeposit = async (req, res) => {
 
   const u = await User.findById(user._id);
   u.balance = (u.balance || 0) + amt;
+  u.rewards.push({
+    message: 'Cashback for Top-up',
+    amount: getRandomReward(),
+    scratched: false
+  });
   await u.save();
 
   const tx = new Transaction({
@@ -193,7 +248,7 @@ const forceDeposit = async (req, res) => {
   });
   await tx.save();
 
-  return res.json({ message: 'Force deposit applied', transaction: tx, balance: u.balance });
+  return res.json({ message: 'Force deposit applied', transaction: tx, balance: u.balance, user: u });
 };
 
 module.exports = { getBalance, send, history, createDeposit, confirmDeposit, forceDeposit };

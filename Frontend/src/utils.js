@@ -276,6 +276,8 @@ export function showStatusOverlay({ type = 'success', message = '' } = {}) {
     if (type === 'success') {
       icon.classList.add('success');
       icon.innerHTML = `<svg viewBox="0 0 52 52" aria-hidden="true"><path class="tick" d="M14 27l7 7 17-17"/></svg>`;
+      // Play completion chime sound for the sender
+      playChimeSound();
     } else {
       icon.classList.add('error');
       icon.innerHTML = `<svg viewBox="0 0 52 52" aria-hidden="true"><path class="cross-line" d="M16 16 L36 36"/><path class="cross-line" d="M36 16 L16 36"/></svg>`;
@@ -328,3 +330,564 @@ export async function attemptForceDeposit(amount, note = '', retries = 3, initia
   }
   throw lastErr || new Error('Force deposit failed');
 }
+
+/**
+ * Play a synthesized, dual-frequency high-fidelity double chime sound (sender completion feedback).
+ */
+export function playChimeSound() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    
+    // First high note (A5 - 880Hz)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(880, ctx.currentTime);
+    gain1.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    
+    // Second higher note (E6 - 1320Hz) starting slightly later
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1320, ctx.currentTime + 0.08);
+    gain2.gain.setValueAtTime(0.001, ctx.currentTime);
+    gain2.gain.setValueAtTime(0.15, ctx.currentTime + 0.08);
+    gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.35);
+    
+    osc2.start(ctx.currentTime + 0.08);
+    osc2.stop(ctx.currentTime + 0.45);
+  } catch (err) {
+    console.warn('Failed to play chime sound:', err);
+  }
+}
+
+/**
+ * Play a synthesized series of metallic coin drop impact sounds.
+ */
+export function playCoinSound() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    
+    // Series of clinks with decreasing volume and variable timing
+    const clinks = [
+      { time: 0, freq: 2100, dur: 0.1, vol: 0.15 },
+      { time: 0.05, freq: 2400, dur: 0.08, vol: 0.1 },
+      { time: 0.12, freq: 1900, dur: 0.12, vol: 0.15 },
+      { time: 0.18, freq: 2200, dur: 0.07, vol: 0.08 },
+      { time: 0.25, freq: 2000, dur: 0.15, vol: 0.12 },
+      { time: 0.35, freq: 2150, dur: 0.1, vol: 0.05 }
+    ];
+    
+    clinks.forEach(clink => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(clink.freq, ctx.currentTime + clink.time);
+      osc.frequency.exponentialRampToValueAtTime(clink.freq * 0.88, ctx.currentTime + clink.time + clink.dur);
+      
+      gain.gain.setValueAtTime(0.001, ctx.currentTime);
+      gain.gain.setValueAtTime(clink.vol, ctx.currentTime + clink.time);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + clink.time + clink.dur);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start(ctx.currentTime + clink.time);
+      osc.stop(ctx.currentTime + clink.time + clink.dur);
+    });
+  } catch (err) {
+    console.warn('Failed to play coin sound:', err);
+  }
+}
+
+/**
+ * Play a short high beep (QR scanning success confirmation).
+ */
+export function playScanBeepSound() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(2000, ctx.currentTime);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.08);
+  } catch (err) {
+    console.warn('Failed to play scan beep sound:', err);
+  }
+}
+
+/**
+ * Draw a full screen canvas falling coin rain animation overlay.
+ */
+export function triggerCoinRain() {
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.style.position = 'fixed';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100vw';
+    canvas.style.height = '100vh';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.zIndex = '9999';
+    document.body.appendChild(canvas);
+    
+    const ctx = canvas.getContext('2d');
+    
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    const coins = [];
+    const coinCount = 45;
+    
+    for (let i = 0; i < coinCount; i++) {
+      coins.push({
+        x: Math.random() * canvas.width,
+        y: -50 - Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 4,
+        vy: 4 + Math.random() * 6,
+        radius: 12 + Math.random() * 8,
+        rotation: Math.random() * Math.PI * 2,
+        rotationSpeed: (Math.random() - 0.5) * 0.15,
+        scaleY: Math.random() * Math.PI,
+        scaleYSpeed: 0.04 + Math.random() * 0.08
+      });
+    }
+    
+    let active = true;
+    
+    function update() {
+      if (!active) return;
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let coinsStillVisible = false;
+      
+      coins.forEach(c => {
+        c.x += c.vx;
+        c.y += c.vy;
+        c.rotation += c.rotationSpeed;
+        c.scaleY += c.scaleYSpeed;
+        
+        const mappedScaleY = Math.abs(Math.sin(c.scaleY));
+        
+        if (c.y < canvas.height + 50) {
+          coinsStillVisible = true;
+          
+          ctx.save();
+          ctx.translate(c.x, c.y);
+          ctx.rotate(c.rotation);
+          ctx.scale(1, mappedScaleY);
+          
+          // Outer Gold Ring
+          ctx.beginPath();
+          ctx.arc(0, 0, c.radius, 0, Math.PI * 2);
+          ctx.fillStyle = '#FFD700';
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+          ctx.shadowBlur = 4;
+          ctx.shadowOffsetY = 2;
+          ctx.fill();
+          
+          // Inner Ring
+          ctx.beginPath();
+          ctx.arc(0, 0, c.radius * 0.8, 0, Math.PI * 2);
+          ctx.fillStyle = '#FFC72C';
+          ctx.fill();
+          
+          // Rupee Text
+          ctx.font = `bold ${c.radius * 1.0}px Arial, sans-serif`;
+          ctx.fillStyle = '#D4AF37';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('₹', 0, 0);
+          
+          ctx.restore();
+        }
+      });
+      
+      if (coinsStillVisible) {
+        requestAnimationFrame(update);
+      } else {
+        active = false;
+        window.removeEventListener('resize', resize);
+        canvas.remove();
+      }
+    }
+    
+    // Play the metallic drop audio loop alongside animation start
+    playCoinSound();
+    
+    requestAnimationFrame(update);
+  } catch (err) {
+    console.error('Coin rain animation failed', err);
+  }
+}
+
+/**
+ * Display a personalized UPI receiving QR Code Dialog.
+ */
+export function showMyQrModal() {
+  if (!store.user) return;
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'my-qr-overlay';
+  
+  const modal = document.createElement('div');
+  modal.className = 'modal qr-generator-modal';
+  modal.style.maxWidth = '360px';
+  modal.style.textAlign = 'center';
+  
+  modal.innerHTML = `
+    <div class="header">
+      <h3>My UPI QR Code</h3>
+      <button class="close" id="my-qr-close">✕</button>
+    </div>
+    
+    <div class="qr-modal-body">
+      <div class="qr-user-details">
+        <div class="qr-user-name">${escapeHtml(store.user.name)}</div>
+        <div class="qr-user-upi">UPI ID: ${escapeHtml(store.user.email)}</div>
+      </div>
+      
+      <div class="qr-card">
+        <div class="qr-card-brand">PayU₹upee</div>
+        <div class="qr-code-frame">
+          <img id="my-qr-image" src="" alt="UPI QR Code" />
+        </div>
+        <div class="qr-card-footer">Scan & Pay Securely</div>
+      </div>
+      
+      <div class="qr-amount-selector">
+        <label class="qr-label">Request Specific Amount (Optional)</label>
+        <input type="number" id="my-qr-amount" class="input" placeholder="Enter amount to receive (e.g. 500)" />
+      </div>
+    </div>
+    
+    <div class="qr-actions">
+      <button class="btn solid-blue" id="my-qr-download">Download QR Code</button>
+    </div>
+  `;
+  
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  
+  const qrImg = modal.querySelector('#my-qr-image');
+  const amtInput = modal.querySelector('#my-qr-amount');
+  
+  function updateQrCode() {
+    const amount = amtInput.value.trim();
+    let link = `upi://pay?pa=${encodeURIComponent(store.user.email)}&pn=${encodeURIComponent(store.user.name)}`;
+    if (amount && !isNaN(amount) && Number(amount) > 0) {
+      link += `&am=${encodeURIComponent(amount)}`;
+    }
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=10&data=${encodeURIComponent(link)}`;
+  }
+  
+  // Initial load
+  updateQrCode();
+  
+  // Listen for amount updates
+  amtInput.addEventListener('input', updateQrCode);
+  
+  // Close buttons
+  modal.querySelector('#my-qr-close').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+  
+  // Download QR code option
+  modal.querySelector('#my-qr-download').addEventListener('click', async () => {
+    try {
+      const response = await fetch(qrImg.src);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `payurupee-qr-${store.user.name.toLowerCase().replace(/\s+/g, '-')}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download QR code image', err);
+      // Fallback: Open in new tab
+      window.open(qrImg.src, '_blank');
+    }
+  });
+}
+
+/**
+ * Trigger a physics-based particle confetti explosion at the center of the screen.
+ */
+export function triggerConfetti() {
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.style.position = 'fixed';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100vw';
+    canvas.style.height = '100vh';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.zIndex = '10000';
+    document.body.appendChild(canvas);
+    
+    const ctx = canvas.getContext('2d');
+    
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    const particles = [];
+    const colors = ['#FFD700', '#00a2ff', '#ff7a00', '#00d26a', '#ff5c6c', '#7c5cff'];
+    
+    for (let i = 0; i < 80; i++) {
+      particles.push({
+        x: canvas.width / 2,
+        y: canvas.height / 2 - 50,
+        vx: (Math.random() - 0.5) * 12,
+        vy: -4 - Math.random() * 12,
+        radius: 4 + Math.random() * 6,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        gravity: 0.35,
+        alpha: 1,
+        decay: 0.015 + Math.random() * 0.015
+      });
+    }
+    
+    let active = true;
+    
+    function update() {
+      if (!active) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let particlesLeft = false;
+      
+      particles.forEach(p => {
+        p.vx *= 0.98;
+        p.vy += p.gravity;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= p.decay;
+        
+        if (p.alpha > 0) {
+          particlesLeft = true;
+          ctx.save();
+          ctx.globalAlpha = p.alpha;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+          ctx.restore();
+        }
+      });
+      
+      if (particlesLeft) {
+        requestAnimationFrame(update);
+      } else {
+        active = false;
+        window.removeEventListener('resize', resize);
+        canvas.remove();
+      }
+    }
+    
+    requestAnimationFrame(update);
+  } catch (err) {
+    console.error('Confetti animation failed', err);
+  }
+}
+
+/**
+ * Display a GPay-style interactive Scratch Card modal (awarding cashback).
+ */
+export function showScratchCardModal(reward) {
+  if (!store.user || !reward) return;
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'scratch-card-overlay';
+  
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.style.maxWidth = '320px';
+  modal.style.textAlign = 'center';
+  modal.style.padding = '20px';
+  
+  modal.innerHTML = `
+    <div class="header">
+      <h3 style="margin: 0; color: #fff;">Scratch & Win</h3>
+      <button class="close" id="scratch-close">✕</button>
+    </div>
+    <div style="padding: 15px 0; display: flex; flex-direction: column; align-items: center;">
+      <p class="smallmuted" style="margin-bottom: 15px; font-size: 13px;">Scratch the silver card to reveal your cashback reward!</p>
+      
+      <div id="scratch-container" style="position: relative; width: 220px; height: 220px; background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 36px rgba(0,0,0,0.4);">
+        <!-- Underlying cashback message -->
+        <div id="scratch-reward-content" style="display: none; text-align: center; animation: popIn 0.3s ease;">
+          <div style="font-size: 40px; margin-bottom: 8px;">🎉</div>
+          <div style="font-size: 14px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;">Cashback Won!</div>
+          <div id="scratch-reward-amount" style="font-size: 32px; font-weight: 800; color: #FFD700; text-shadow: 0 4px 10px rgba(255,215,0,0.25); margin-top: 4px;">₹0.00</div>
+          <div id="scratch-reward-msg" class="smallmuted" style="font-size: 12px; margin-top: 6px; color: #fff; font-weight: 600;"></div>
+        </div>
+        
+        <canvas id="scratch-canvas" width="220" height="220" style="position: absolute; top: 0; left: 0; cursor: crosshair; touch-action: none; border-radius: 16px;"></canvas>
+      </div>
+    </div>
+  `;
+  
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  
+  const canvas = modal.querySelector('#scratch-canvas');
+  const ctx = canvas.getContext('2d');
+  const rewardContent = modal.querySelector('#scratch-reward-content');
+  const rewardAmountNode = modal.querySelector('#scratch-reward-amount');
+  const rewardMsgNode = modal.querySelector('#scratch-reward-msg');
+  
+  // Set amount and custom message safely
+  const amtVal = Number(reward.amount ?? 0);
+  rewardAmountNode.textContent = `₹${amtVal.toFixed(2)}`;
+  rewardMsgNode.textContent = reward.message || 'Thank you for using PayURupee!';
+  
+  // Draw silver overlay
+  ctx.fillStyle = '#a0a5b5';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Draw premium gold card background pattern
+  ctx.fillStyle = '#8a8e9e';
+  ctx.fillRect(10, 10, canvas.width - 20, canvas.height - 20);
+  
+  ctx.font = 'bold 13px Arial, sans-serif';
+  ctx.fillStyle = '#444855';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('PayU₹upee Rewards', canvas.width / 2, canvas.height / 2 - 15);
+  ctx.font = 'bold 11px Arial, sans-serif';
+  ctx.fillStyle = '#555a6a';
+  ctx.fillText('SCRATCH HERE TO WIN', canvas.width / 2, canvas.height / 2 + 15);
+  
+  let isDrawing = false;
+  let scratched = false;
+  
+  function getMousePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  }
+  
+  function scratch(e) {
+    if (!isDrawing || scratched) return;
+    const pos = getMousePos(e);
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 22, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Check scratched percentage periodically
+    checkScratchProgress();
+  }
+  
+  function checkScratchProgress() {
+    if (scratched) return;
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imgData.data;
+    let transparent = 0;
+    
+    for (let i = 3; i < pixels.length; i += 4) {
+      if (pixels[i] === 0) {
+        transparent++;
+      }
+    }
+    
+    const percentage = (transparent / (canvas.width * canvas.height)) * 100;
+    
+    if (percentage >= 50) {
+      scratched = true;
+      claimReward();
+    }
+  }
+  
+  async function claimReward() {
+    // Fade out canvas
+    canvas.style.transition = 'opacity 0.4s ease';
+    canvas.style.opacity = '0';
+    rewardContent.style.display = 'block';
+    
+    setTimeout(() => {
+      canvas.remove();
+    }, 400);
+    
+    // Confetti explosion
+    triggerConfetti();
+    playChimeSound();
+    
+    try {
+      // Actually claim on backend
+      const res = await apiFetch('/users/claim-reward', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rewardId: reward._id })
+      });
+      
+      // Update local store with updated user document containing balance/rewards status
+      if (res && res.user) {
+        store.user = res.user;
+        localStorage.setItem('ewallet_user', JSON.stringify(store.user));
+        if (window.__onAuthChange) window.__onAuthChange();
+      }
+      
+      // Trigger canvas rupee rain
+      setTimeout(() => {
+        triggerCoinRain();
+      }, 500);
+    } catch (err) {
+      console.warn('Failed to claim reward from backend', err);
+    }
+  }
+  
+  canvas.addEventListener('mousedown', (e) => { isDrawing = true; scratch(e); });
+  canvas.addEventListener('mousemove', scratch);
+  window.addEventListener('mouseup', () => { isDrawing = false; });
+  
+  canvas.addEventListener('touchstart', (e) => { isDrawing = true; scratch(e); });
+  canvas.addEventListener('touchmove', scratch);
+  window.addEventListener('touchend', () => { isDrawing = false; });
+  
+  modal.querySelector('#scratch-close').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+}
+
