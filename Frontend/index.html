@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>-Nexus Pay</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Status Overlay for payment results -->
+    <div id="status-overlay" class="status-overlay hidden" aria-live="polite" aria-atomic="true">
+      <div class="status-card">
+        <div class="icon" id="status-icon" aria-hidden="true"></div>
+        <div class="message" id="status-message">Processing...</div>
+      </div>
+    </div>
+    <header class="topbar">
+      <div class="brand">Nexus Pay</div>
+      <button id="nav-toggle" class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">☰</button>
+      <nav class="nav" id="main-nav">
+        <button id="nav-dashboard" class="nav-btn">Dashboard</button>
+        <button id="nav-send" class="nav-btn">Send</button>
+        <button id="nav-topup" class="nav-btn">Top Up</button>
+        <button id="nav-upload" class="nav-btn">Upload QR</button>
+        <button id="nav-bills" class="nav-btn">Bills</button>
+        <button id="nav-history" class="nav-btn">History</button>
+        <button id="nav-admin" class="nav-btn hidden">Admin</button>
+      </nav>
+      <div class="auth-area" id="auth-area">
+        <span id="user-info"></span>
+        <!-- Demo mode toggle (controls Top Up demo vs real confirm) -->
+        <button id="dev-mode-toggle" class="small ghost" title="Toggle demo mode">Demo: ON</button>
+        <button id="api-settings-btn" class="small ghost" title="Configure Backend API URL">⚙ API</button>
+        <button id="btn-login" class="small">Login</button>
+        <button id="btn-register" class="small">Register</button>
+        <button id="btn-logout" class="small hidden">Logout</button>
+      </div>
+    </header>
+
+    <main id="main" class="container">
+      <!-- Views injected by JS -->
+    </main>
+
+    <footer class="footer">
+      <small> &lt;Souvik ./&gt;</small>
+    </footer>
+  </div>
+
+  <!-- Stripe JS (for client-side card collection) -->
+  <!-- Set your Stripe publishable key for testing (publishable key only, safe for client-side). Replace with your own pk_test_... key. -->
+  <script>window.__STRIPE_PUBLISHABLE_KEY__ = 'pk_test_TYooMQauvdEDq54NiTphI7jx';</script>
+  <script src="https://js.stripe.com/v3/"></script>
+  <!-- jsQR for client-side QR decoding -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <script>
+    // Dynamically resolve Backend API Base URL
+    // 1. Check if a custom API URL has been set in localStorage
+    // 2. Otherwise default to localhost if running locally, or current host /api path as proxy fallback
+    const savedApi = localStorage.getItem('API_BASE_URL');
+    if (savedApi) {
+      window.__API_BASE__ = savedApi;
+    } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      window.__API_BASE__ = 'http://localhost:4000/api';
+    } else {
+      window.__API_BASE__ = window.location.origin + '/api';
+    }
+    console.log('API Base URL:', window.__API_BASE__);
+  </script>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
