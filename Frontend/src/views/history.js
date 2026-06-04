@@ -20,43 +20,45 @@ export async function renderHistory() {
       return;
     }
     const html = `
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Type</th>
-            <th>Details</th>
-            <th>Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${data.map((tx, idx) => {
-            const dt = new Date(tx.createdAt).toLocaleString();
-            const type = escapeHtml(tx.type === 'send' ? 'Sent Money' : tx.type === 'bill' ? 'Bill Payment' : tx.type === 'topup' ? 'Added Money' : tx.type);
-            
-            let detailText = '';
-            if (tx.type === 'send') {
-              detailText = `To: ${tx.to?.email || tx.meta?.toEmail || tx.meta?.recipientEmail || 'N/A'}`;
-            } else if (tx.type === 'receive') {
-              detailText = `From: ${tx.from?.email || 'N/A'}`;
-            } else if (tx.type === 'bill') {
-              detailText = `Provider: ${tx.meta?.provider || 'N/A'}`;
-            } else {
-              detailText = tx.meta?.note || '';
-            }
-            
-            const isDebit = tx.type === 'send' || tx.type === 'bill';
-            const amt = (isDebit ? '-' : '+') + formatCurrency(tx.amount);
-            const amtColor = isDebit ? '#ff5c6c' : '#00d26a';
-            return `<tr class="tx-row" data-index="${idx}" style="cursor: pointer;">
-              <td>${dt}</td>
-              <td>${type}</td>
-              <td>${escapeHtml(detailText)}</td>
-              <td><strong style="color: ${amtColor}">${amt}</strong></td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
+      <div class="table-responsive" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Details</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map((tx, idx) => {
+              const dt = new Date(tx.createdAt).toLocaleString();
+              const type = escapeHtml(tx.type === 'send' ? 'Sent Money' : tx.type === 'bill' ? 'Bill Payment' : tx.type === 'topup' ? 'Added Money' : tx.type);
+              
+              let detailText = '';
+              if (tx.type === 'send') {
+                detailText = `To: ${tx.to?.email || tx.meta?.toEmail || tx.meta?.recipientEmail || 'N/A'}`;
+              } else if (tx.type === 'receive') {
+                detailText = `From: ${tx.from?.email || 'N/A'}`;
+              } else if (tx.type === 'bill') {
+                detailText = `Provider: ${tx.meta?.provider || 'N/A'}`;
+              } else {
+                detailText = tx.meta?.note || '';
+              }
+              
+              const isDebit = tx.type === 'send' || tx.type === 'bill';
+              const amt = (isDebit ? '-' : '+') + formatCurrency(tx.amount);
+              const amtColor = isDebit ? '#ff5c6c' : '#00d26a';
+              return `<tr class="tx-row" data-index="${idx}" style="cursor: pointer;">
+                <td style="white-space: nowrap;">${dt}</td>
+                <td>${type}</td>
+                <td style="min-width: 150px;">${escapeHtml(detailText)}</td>
+                <td><strong style="color: ${amtColor}">${amt}</strong></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
     `;
     container.innerHTML = html;
 

@@ -1082,9 +1082,6 @@ input[type="file"].input::file-selector-button{
   padding: 4px max(10px, env(safe-area-inset-left, 10px)) 16px max(10px, env(safe-area-inset-right, 10px)) !important;
   box-shadow: 0 -10px 35px rgba(0, 0, 0, 0.9);
   box-sizing: border-box;
-  transform: translate3d(0, 0, 0) !important;
-  -webkit-transform: translate3d(0, 0, 0) !important;
-  will-change: transform;
 }
 
 .m-nav-btn {
