@@ -26,32 +26,44 @@ export function renderTopUp() {
 
   const msg = document.getElementById('topup-msg');
   const publishable = window.__STRIPE_PUBLISHABLE_KEY__ || '';
-  if (!publishable) {
-    msg.innerHTML = '<div class="err">Missing Stripe publishable key. Set window.__STRIPE_PUBLISHABLE_KEY__ in your page (test key)</div>';
-    return;
-  }
-
-  // Initialize Stripe and mount the Card element with custom dark theme styling rules
-  const stripe = Stripe(publishable);
-  const elements = stripe.elements();
-  const card = elements.create('card', {
-    style: {
-      base: {
-        color: '#ffffff',
-        fontFamily: 'Inter, system-ui, sans-serif',
-        fontSize: '14px',
-        iconColor: '#ff7a00',
-        '::placeholder': {
-          color: '#8e96a3'
-        }
-      },
-      invalid: {
-        color: '#ff5c6c',
-        iconColor: '#ff5c6c'
-      }
+  
+  let stripe = null;
+  let card = null;
+  
+  if (isDemoMode()) {
+    // Hide Card Element input since we use simulate endpoints in Demo mode
+    const cardEl = document.getElementById('card-element');
+    if (cardEl) {
+      cardEl.style.display = 'none';
     }
-  });
-  card.mount('#card-element');
+  } else {
+    if (!publishable) {
+      msg.innerHTML = '<div class="err">Missing Stripe publishable key. Set window.__STRIPE_PUBLISHABLE_KEY__ in your page (test key)</div>';
+      return;
+    }
+
+    // Initialize Stripe and mount the Card element with custom dark theme styling rules
+    stripe = Stripe(publishable);
+    const elements = stripe.elements();
+    card = elements.create('card', {
+      style: {
+        base: {
+          color: '#ffffff',
+          fontFamily: 'Inter, system-ui, sans-serif',
+          fontSize: '14px',
+          iconColor: '#ff7a00',
+          '::placeholder': {
+            color: '#8e96a3'
+          }
+        },
+        invalid: {
+          color: '#ff5c6c',
+          iconColor: '#ff5c6c'
+        }
+      }
+    });
+    card.mount('#card-element');
+  }
 
   document.getElementById('form-topup').addEventListener('submit', async (e) => {
     e.preventDefault();
