@@ -23,6 +23,12 @@ export function renderSend() {
         </div>
         <div id="send-msg" style="margin-top:8px"></div>
       </form>
+
+      <!-- GPay Quick contacts in Send Money page -->
+      <div id="quick-contacts-section" style="display: none; border-top: 1px dashed rgba(255,255,255,0.08); margin-top: 24px; padding-top: 18px;">
+        <span class="smallmuted" style="font-size: 11px; font-weight: 700; letter-spacing: 0.5px; display: block; margin-bottom: 12px;">SELECT A CONTACT TO SEND MONEY</span>
+        <div id="quick-contacts-container" style="display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; -ms-overflow-style: none;"></div>
+      </div>
     </div>
   `;
 
@@ -111,6 +117,64 @@ export function renderSend() {
         showStatusOverlay({ type: 'error', message: text });
       }
     }
+  });
+
+  // Load Quick Contacts from database
+  apiFetch('/users/contacts').then(json => {
+    const contacts = json.contacts || [];
+    const container = document.getElementById('quick-contacts-container');
+    const section = document.getElementById('quick-contacts-section');
+    
+    if (contacts.length > 0 && container) {
+      section.style.display = 'block';
+      container.innerHTML = '';
+      
+      const colors = ['#ff7a00', '#00a2ff', '#00d26a', '#7c5cff', '#e60072', '#ffbc00'];
+      
+      contacts.forEach((contact, idx) => {
+        const item = document.createElement('div');
+        item.style.display = 'flex';
+        item.style.flexDirection = 'column';
+        item.style.alignItems = 'center';
+        item.style.cursor = 'pointer';
+        item.style.minWidth = '60px';
+        
+        const initial = String(contact.name || contact.email || '?').charAt(0).toUpperCase();
+        const color = colors[idx % colors.length];
+        
+        item.innerHTML = `
+          <div style="width: 46px; height: 46px; border-radius: 50%; background: ${color}20; border: 1.5px solid ${color}; color: ${color}; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; transition: all 0.2s ease;" class="contact-avatar">
+            ${initial}
+          </div>
+          <span style="font-size: 11px; font-weight: 600; color: #fff; margin-top: 6px; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;">
+            ${escapeHtml(contact.name ? contact.name.split(' ')[0] : contact.email.split('@')[0])}
+          </span>
+        `;
+        
+        item.addEventListener('click', () => {
+          const toEl = document.querySelector('input[name="toEmail"]');
+          const amtEl = document.querySelector('input[name="amount"]');
+          if (toEl) {
+            toEl.value = contact.email;
+            if (amtEl) amtEl.focus();
+          }
+        });
+        
+        const avatar = item.querySelector('.contact-avatar');
+        item.addEventListener('mouseenter', () => {
+          avatar.style.transform = 'scale(1.1)';
+          avatar.style.boxShadow = `0 4px 12px ${color}33`;
+        });
+        item.addEventListener('mouseleave', () => {
+          avatar.style.transform = 'scale(1)';
+          avatar.style.boxShadow = 'none';
+        });
+        
+        container.appendChild(item);
+      });
+    }
+  }).catch(err => {
+    console.warn('Failed to load contacts for send view', err);
   });
 
   // Set initial focus to the first input field

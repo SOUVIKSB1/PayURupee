@@ -37,7 +37,7 @@ export function renderUpload() {
   }
 
   main.innerHTML = `
-    <div class="card fade-in" style="max-width: 600px; margin: 24px auto; padding: 28px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+    <div class="card fade-in scan-card" style="max-width: 600px; margin: 24px auto; padding: 28px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
       
       <!-- Header -->
       <div style="text-align: center; margin-bottom: 24px;">
@@ -73,7 +73,7 @@ export function renderUpload() {
       </div>
       
       <!-- Camera control actions -->
-      <div style="margin-bottom: 24px; display: flex; gap: 12px;">
+      <div class="camera-actions" style="margin-bottom: 24px; display: flex; gap: 12px;">
         <button type="button" class="btn primary" id="btn-toggle-camera" style="flex: 1; padding: 14px; font-weight: 700; border-radius: 12px; box-shadow: 0 4px 12px rgba(255,122,0,0.15);">Start Camera Scan</button>
         <button type="button" class="btn ghost" id="scan-my-qr" style="flex: 1; padding: 14px; font-weight: 600; border-radius: 12px; border-color: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; gap: 8px; color: #fff;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect><rect x="14" y="14" width="3" height="3"></rect></svg>
@@ -96,7 +96,7 @@ export function renderUpload() {
           <input type="file" name="qr" id="file-qr-input" accept="image/*" style="display: none;" />
         </div>
 
-        <div style="display: flex; gap: 10px;">
+        <div class="form-actions" style="display: flex; gap: 10px;">
           <button class="btn primary" type="submit" style="flex: 1; padding: 13px; border-radius: 12px; font-weight: 700;">Decode & Proceed</button>
           <button type="button" class="btn ghost" id="qr-back" style="flex: 0.4; padding: 13px; border-radius: 12px; border-color: rgba(255,255,255,0.08); color: #fff;">Back</button>
         </div>
@@ -215,39 +215,45 @@ export function renderUpload() {
   }
   
   function tick() {
-    if (videoEl && videoEl.readyState === videoEl.HAVE_ENOUGH_DATA && canvasEl && ctx) {
-      canvasEl.width = videoEl.videoWidth;
-      canvasEl.height = videoEl.videoHeight;
-      ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
-      
-      const imgData = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
-      const code = window.jsQR ? jsQR(imgData.data, canvasEl.width, canvasEl.height) : null;
-      
-      if (code) {
-        drawRect(code.location, '#00d26a');
-        
-        if (code.data) {
-          playScanBeepSound();
-          if (flash) flash.classList.add('active');
+    try {
+      if (videoEl && videoEl.readyState === videoEl.HAVE_ENOUGH_DATA && canvasEl && ctx) {
+        if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
+          canvasEl.width = videoEl.videoWidth;
+          canvasEl.height = videoEl.videoHeight;
+          ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
           
-          cancelAnimationFrame(animFrameId);
-          animFrameId = null;
+          const imgData = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
+          const code = window.jsQR ? window.jsQR(imgData.data, canvasEl.width, canvasEl.height) : null;
           
-          if (stream) {
-            stream.getVideoTracks().forEach(track => track.enabled = false);
+          if (code) {
+            drawRect(code.location, '#00d26a');
+            
+            if (code.data) {
+              playScanBeepSound();
+              if (flash) flash.classList.add('active');
+              
+              cancelAnimationFrame(animFrameId);
+              animFrameId = null;
+              
+              if (stream) {
+                stream.getVideoTracks().forEach(track => track.enabled = false);
+              }
+              
+              if (laser) laser.classList.add('hidden');
+              
+              setTimeout(() => {
+                const parsed = parseQrPayload(code.data);
+                stopCamera();
+                if (flash) flash.classList.remove('active');
+                showQrPreview(parsed || {}, null, code.data, null);
+              }, 350);
+              return;
+            }
           }
-          
-          if (laser) laser.classList.add('hidden');
-          
-          setTimeout(() => {
-            const parsed = parseQrPayload(code.data);
-            stopCamera();
-            if (flash) flash.classList.remove('active');
-            showQrPreview(parsed || {}, null, code.data, null);
-          }, 350);
-          return;
         }
       }
+    } catch (e) {
+      console.warn('Error in scanner tick:', e);
     }
     
     if (stream) {
@@ -347,9 +353,11 @@ function showQrPreview(parsed, file, raw, dataUrl) {
   modal.style.background = '#08080a';
   modal.style.border = '1px solid rgba(255,255,255,0.08)';
   modal.style.borderRadius = '20px';
-  modal.style.padding = '24px';
+  modal.style.padding = 'min(24px, 5vw)';
+  modal.style.width = '90%';
   modal.style.maxWidth = '460px';
   modal.style.boxShadow = '0 24px 64px rgba(0,0,0,0.8)';
+  modal.style.boxSizing = 'border-box';
   
   modal.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255,255,255,0.08); padding-bottom: 14px; margin-bottom: 18px;">

@@ -979,7 +979,13 @@ input[type="file"].input::file-selector-button{
 /* Mobile responsive styles */
 @media (max-width: 760px) {
   body {
-    padding-bottom: 74px; /* Ensure content is clear of bottom navigation */
+    padding-bottom: calc(84px + env(safe-area-inset-bottom, 12px)); /* Ensure content is clear of bottom navigation */
+  }
+
+  .topbar {
+    margin: 8px 12px 0 12px;
+    padding: 8px 14px;
+    border-radius: 10px;
   }
 
   .dropdown-panel {
@@ -995,7 +1001,7 @@ input[type="file"].input::file-selector-button{
   .toast-container {
     right: 12px;
     left: 12px;
-    bottom: 84px; /* Elevate toast so it floats clear of the bottom tab bar */
+    bottom: calc(84px + env(safe-area-inset-bottom, 12px)); /* Elevate toast so it floats clear of the bottom tab bar */
     align-items: center;
   }
   .toast {
@@ -1009,6 +1015,21 @@ input[type="file"].input::file-selector-button{
   .desktop-only {
     display: none !important;
   }
+
+  /* Scan & Pay Page mobile adjustments */
+  .scan-card {
+    padding: 18px !important;
+    margin: 12px auto !important;
+    border-radius: 18px !important;
+  }
+  .camera-actions, .form-actions {
+    flex-direction: column;
+    gap: 8px !important;
+  }
+  .camera-actions button, .form-actions button {
+    flex: 1 1 auto !important;
+    width: 100%;
+  }
 }
 
 /* Mobile Bottom Navigation Bar */
@@ -1017,23 +1038,26 @@ input[type="file"].input::file-selector-button{
   bottom: 0;
   left: 0;
   right: 0;
-  height: 64px;
-  background: #08080a;
+  height: calc(64px + env(safe-area-inset-bottom, 12px));
+  background: rgba(8, 8, 10, 0.85);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   justify-content: space-around;
   align-items: center;
   z-index: 99;
-  padding: 0 10px;
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  padding: 0 max(10px, env(safe-area-inset-left, 10px)) env(safe-area-inset-bottom, 12px);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(var(--glass-blur, 12px));
+  -webkit-backdrop-filter: blur(var(--glass-blur, 12px));
+  box-sizing: border-box;
 }
 
 .m-nav-btn {
   background: transparent;
   border: none;
   display: flex;
+  flex: 1;
+  min-width: 0;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -1042,10 +1066,19 @@ input[type="file"].input::file-selector-button{
   font-size: 10px;
   font-weight: 600;
   cursor: pointer;
-  width: 68px;
   height: 100%;
   transition: all 0.2s ease;
   position: relative;
+  padding: 4px 2px;
+}
+
+.m-nav-btn span {
+  font-size: clamp(8.5px, 2.2vw, 10.5px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: center;
 }
 
 .m-nav-btn svg {
@@ -1058,15 +1091,15 @@ input[type="file"].input::file-selector-button{
 
 /* Floating Scan & Pay Button */
 .scan-pay-btn {
-  width: 76px;
-  height: 76px;
-  margin-top: -32px;
+  flex: 0 0 72px;
+  height: 72px;
+  margin-top: -36px;
   z-index: 100;
 }
 
 .scan-btn-inner {
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: var(--accent1); /* Solid Orange */
   color: #08080a;

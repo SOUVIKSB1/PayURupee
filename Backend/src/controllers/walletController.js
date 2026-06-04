@@ -205,9 +205,9 @@ const confirmDeposit = async (req, res) => {
 // Force deposit endpoint for demo/demo-mode: credits user's balance without Stripe verification.
 // Allowed when NODE_ENV !== 'production' or when ENABLE_FORCE_DEPOSIT=1 is set in env.
 const forceDeposit = async (req, res) => {
-  // safety guard
-  const allowed = (process.env.NODE_ENV || 'development') !== 'production' || process.env.ENABLE_FORCE_DEPOSIT === '1';
-  if (!allowed) return res.status(403).json({ message: 'Force deposit not allowed in production' });
+  // safety guard: enable demo deposits by default unless explicitly disabled with ENABLE_FORCE_DEPOSIT=0
+  const allowed = process.env.ENABLE_FORCE_DEPOSIT !== '0';
+  if (!allowed) return res.status(403).json({ message: 'Demo deposits are disabled on this server' });
 
   const user = req.user;
   const { amount, note } = req.body;

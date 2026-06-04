@@ -85,4 +85,23 @@ const claimReward = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, uploadQr, claimReward };
+const listContacts = async (req, res) => {
+  try {
+    const currentUserId = req.user._id;
+    const contacts = await User.find({
+      role: 'user',
+      isBlocked: false,
+      _id: { $ne: currentUserId }
+    })
+    .select('name email')
+    .limit(10)
+    .lean();
+    
+    res.json({ contacts });
+  } catch (err) {
+    console.error('Error listing contacts:', err);
+    res.status(500).json({ message: 'Server error listing contacts' });
+  }
+};
+
+module.exports = { getProfile, uploadQr, claimReward, listContacts };

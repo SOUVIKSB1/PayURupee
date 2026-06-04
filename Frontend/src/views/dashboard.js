@@ -128,6 +128,14 @@ export async function renderDashboard() {
             </div>
           </div>
           
+          <!-- People & Contacts (GPay Style) -->
+          <div class="paytm-section" id="contacts-section" style="display: none;">
+            <h3>People</h3>
+            <div id="contacts-grid" style="display: flex; gap: 16px; overflow-x: auto; padding: 8px 4px 12px; scrollbar-width: none; -ms-overflow-style: none;">
+              <!-- Loaded dynamically -->
+            </div>
+          </div>
+          
           <!-- Recharge & Bill Payments Section -->
           <div class="paytm-section">
             <h3>Recharge & Bill Payments</h3>
@@ -267,10 +275,11 @@ export async function renderDashboard() {
   // Fetch Wallet Balance, Providers list, and Transactions in parallel
   const balEl = document.getElementById('balance');
   try {
-    const [profile, providersJson, historyJson] = await Promise.all([
+    const [profile, providersJson, historyJson, contactsJson] = await Promise.all([
       apiFetch('/users/me'),
       apiFetch('/bills/providers'),
-      apiFetch('/wallet/history')
+      apiFetch('/wallet/history'),
+      apiFetch('/users/contacts').catch(() => ({ contacts: [] }))
     ]);
     
     // Live Counter Animation to count up from 0 to the actual balance
@@ -345,6 +354,59 @@ export async function renderDashboard() {
           }, 200);
         });
         providersGrid.appendChild(item);
+      });
+    }
+
+    // Render GPay Style Contacts List
+    const contactsSection = document.getElementById('contacts-section');
+    const contactsGrid = document.getElementById('contacts-grid');
+    const contacts = contactsJson.contacts || [];
+    
+    if (contacts.length > 0 && contactsGrid) {
+      contactsSection.style.display = 'block';
+      contactsGrid.innerHTML = '';
+      
+      const colors = ['#ff7a00', '#00a2ff', '#00d26a', '#7c5cff', '#e60072', '#ffbc00'];
+      
+      contacts.forEach((contact, idx) => {
+        const item = document.createElement('div');
+        item.style.display = 'flex';
+        item.style.flexDirection = 'column';
+        item.style.alignItems = 'center';
+        item.style.cursor = 'pointer';
+        item.style.minWidth = '64px';
+        item.style.textAlign = 'center';
+        
+        const initial = String(contact.name || contact.email || '?').charAt(0).toUpperCase();
+        const color = colors[idx % colors.length];
+        
+        item.innerHTML = `
+          <div style="width: 52px; height: 52px; border-radius: 50%; background: ${color}22; border: 1.5px solid ${color}; color: ${color}; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; box-shadow: 0 4px 12px ${color}11; transition: all 0.2s ease;" class="contact-avatar">
+            ${initial}
+          </div>
+          <span style="font-size: 11.5px; font-weight: 600; color: #fff; margin-top: 8px; max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            ${escapeHtml(contact.name ? contact.name.split(' ')[0] : contact.email.split('@')[0])}
+          </span>
+        `;
+        
+        item.addEventListener('click', () => {
+          store.qrPrefill = { toEmail: contact.email };
+          goto('send');
+        });
+        
+        const avatar = item.querySelector('.contact-avatar');
+        item.style.transition = 'all 0.2s ease';
+        
+        item.addEventListener('mouseenter', () => {
+          avatar.style.transform = 'scale(1.1)';
+          avatar.style.boxShadow = `0 6px 16px ${color}33`;
+        });
+        item.addEventListener('mouseleave', () => {
+          avatar.style.transform = 'scale(1)';
+          avatar.style.boxShadow = `0 4px 12px ${color}11`;
+        });
+        
+        contactsGrid.appendChild(item);
       });
     }
 
