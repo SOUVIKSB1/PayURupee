@@ -885,6 +885,21 @@ export function showScratchCardModal(reward) {
   canvas.addEventListener('touchmove', scratch);
   window.addEventListener('touchend', () => { isDrawing = false; });
   
+  // Close button handler
+  const closeBtn = modal.querySelector('#scratch-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      overlay.remove();
+    });
+  }
+  
+  // Click outside modal to dismiss
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.remove();
+    }
+  });
+  
 }
 
 export async function showContactDrawer(contact, color = '#ff7a00') {
