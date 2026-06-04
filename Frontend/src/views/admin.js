@@ -13,6 +13,38 @@ export async function renderAdmin(tab = 'users') {
   window.__currentAdminTab = tab;
   if (window.__onAuthChange) window.__onAuthChange();
 
+  const styleId = 'admin-custom-styles';
+  if (!document.getElementById(styleId)) {
+    const styleEl = document.createElement('style');
+    styleEl.id = styleId;
+    styleEl.innerHTML = `
+      .user-row-card:hover {
+        background: rgba(255, 255, 255, 0.045) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      }
+      @media (max-width: 600px) {
+        .user-row-card {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 16px !important;
+        }
+        .user-row-card > div:last-child {
+          width: 100% !important;
+          grid-template-columns: 1fr 1fr !important;
+        }
+        .user-row-card > div:last-child > div {
+          display: none !important;
+        }
+        .user-row-card > div:last-child button {
+          width: 100% !important;
+        }
+      }
+    `;
+    document.head.appendChild(styleEl);
+  }
+
   const main = document.getElementById('main');
   main.innerHTML = `
     <div class="fade-in" style="max-width: 1200px; margin: 24px auto; padding: 0 16px;">
@@ -111,8 +143,10 @@ async function renderUsersTab() {
     };
 
     // Calculate metrics
-    const totalVolume = tx.filter(t => t.type === 'send' || t.type === 'bill').reduce((acc, t) => acc + t.amount, 0);
-    const totalRewards = tx.filter(t => t.type === 'deposit').reduce((acc, t) => acc + t.amount, 0);
+    const totalVolume = users.reduce((acc, u) => acc + (u.balance || 0), 0);
+    const totalRewards = users.reduce((acc, u) => {
+      return acc + (u.rewards || []).reduce((sum, r) => sum + (r.amount || 0), 0);
+    }, 0);
 
     // Update Metrics
     document.getElementById('metric-users').textContent = users.length;
@@ -150,26 +184,26 @@ async function renderUsersTab() {
         const roleColor = u.role === 'admin' ? 'var(--accent1)' : 'var(--accent2)';
         
         return `
-          <div style="padding: 12px 14px; background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.03); border-radius: 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 140px;">
-              <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
-                <strong style="color: #fff; font-size: 13.5px;">${escapeHtml(u.name || u.email)}</strong>
+          <div class="user-row-card" style="padding: 16px 20px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; transition: all 0.2s ease;">
+            <div style="flex: 1; min-width: 200px;">
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <strong style="color: #fff; font-size: 14.5px; letter-spacing: -0.2px;">${escapeHtml(u.name || u.email)}</strong>
                 ${badge}
                 ${blockBadge}
               </div>
-              <div class="smallmuted" style="font-size: 11px; margin-top: 2px;">
+              <div class="smallmuted" style="font-size: 11.5px; margin-top: 4px; opacity: 0.7;">
                 ${escapeHtml(u.email)} • <span style="color: ${roleColor}; font-weight: 600;">${u.role.toUpperCase()}</span>
               </div>
-              <div style="margin-top: 6px; font-weight: 700; font-size: 13px; color: #fff;">${formatCurrency(u.balance)}</div>
+              <div style="margin-top: 8px; font-weight: 800; font-size: 15px; color: #fff; background: linear-gradient(135deg, #fff, #e2e8f0); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${formatCurrency(u.balance)}</div>
             </div>
-            <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0; flex-wrap: wrap;">
-              <button class="small-btn solid btn-award-reward" data-user-id="${u._id}" data-user-name="${escapeHtml(u.name || u.email)}" style="padding: 5px 10px; font-size: 11px; width: 100px;">Award Reward</button>
-              <button class="small-btn ghost btn-adjust-balance" data-user-id="${u._id}" data-user-name="${escapeHtml(u.name || u.email)}" style="padding: 5px 10px; font-size: 11px; border-color: rgba(255,255,255,0.08); color: var(--accent2); width: 100px;">Adjust Bal</button>
+            <div style="display: grid; grid-template-columns: repeat(3, 110px); gap: 8px; align-items: center; flex-shrink: 0;">
+              <button class="small-btn solid btn-award-reward" data-user-id="${u._id}" data-user-name="${escapeHtml(u.name || u.email)}" style="padding: 6px 12px; font-size: 11.5px; font-weight: 600; width: 110px; border-radius: 8px;">Award Reward</button>
+              <button class="small-btn ghost btn-adjust-balance" data-user-id="${u._id}" data-user-name="${escapeHtml(u.name || u.email)}" style="padding: 6px 12px; font-size: 11.5px; font-weight: 600; border-color: rgba(255,255,255,0.08); color: var(--accent2); width: 110px; border-radius: 8px;">Adjust Bal</button>
               ${u.role !== 'admin' ? `
-                <button class="small-btn ghost btn-toggle-block" data-user-id="${u._id}" data-blocked="${u.isBlocked || false}" style="padding: 5px 10px; font-size: 11px; width: 100px; border-color: rgba(255,255,255,0.08); color: ${u.isBlocked ? '#00d26a' : 'var(--danger)'}; font-weight: 600;">
+                <button class="small-btn ghost btn-toggle-block" data-user-id="${u._id}" data-blocked="${u.isBlocked || false}" style="padding: 6px 12px; font-size: 11.5px; width: 110px; border-radius: 8px; border-color: rgba(255,255,255,0.08); color: ${u.isBlocked ? '#00d26a' : 'var(--danger)'}; font-weight: 600;">
                   ${u.isBlocked ? 'Unblock' : 'Block'}
                 </button>
-              ` : ''}
+              ` : `<div style="width: 110px;"></div>`}
             </div>
           </div>
         `;
