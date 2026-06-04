@@ -976,7 +976,22 @@ input[type="file"].input::file-selector-button{
   font-size: 12px;
 }
 
-/* Mobile responsive styles */
+/* Scan Card & Actions Desktop Styles */
+.scan-card {
+  max-width: 600px;
+  margin: 24px auto;
+  padding: 28px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+.camera-actions, .form-actions {
+  display: flex;
+  gap: 12px;
+}
+
 @media (max-width: 760px) {
   body {
     padding-bottom: calc(84px + env(safe-area-inset-bottom, 12px)); /* Ensure content is clear of bottom navigation */
@@ -986,6 +1001,25 @@ input[type="file"].input::file-selector-button{
     margin: 8px 12px 0 12px;
     padding: 8px 14px;
     border-radius: 10px;
+  }
+
+  /* Disable transitions and heavy translations on mobile cards to fix sluggish feeling */
+  .card {
+    transition: none !important;
+  }
+  .card:hover {
+    transform: none !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+  }
+  .card::after {
+    display: none !important; /* Disable multi-gradient shadows */
+  }
+
+  /* Disable continuous floaty animation on mobile modal overlays */
+  .modal {
+    animation: popIn .28s cubic-bezier(.2,.9,.2,1) both !important;
+    max-width: 90% !important;
+    padding: 18px !important;
   }
 
   .dropdown-panel {
@@ -1018,7 +1052,7 @@ input[type="file"].input::file-selector-button{
 
   /* Scan & Pay Page mobile adjustments */
   .scan-card {
-    padding: 18px !important;
+    padding: 16px !important;
     margin: 12px auto !important;
     border-radius: 18px !important;
   }
@@ -1050,6 +1084,9 @@ input[type="file"].input::file-selector-button{
   backdrop-filter: blur(var(--glass-blur, 12px));
   -webkit-backdrop-filter: blur(var(--glass-blur, 12px));
   box-sizing: border-box;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  will-change: transform;
 }
 
 .m-nav-btn {

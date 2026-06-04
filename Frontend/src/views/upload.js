@@ -37,7 +37,7 @@ export function renderUpload() {
   }
 
   main.innerHTML = `
-    <div class="card fade-in scan-card" style="max-width: 600px; margin: 24px auto; padding: 28px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+    <div class="card fade-in scan-card">
       
       <!-- Header -->
       <div style="text-align: center; margin-bottom: 24px;">
@@ -55,7 +55,7 @@ export function renderUpload() {
         <div class="scanner-bracket" style="bottom: 16px; right: 16px; border-width: 0 3px 3px 0; border-bottom-right-radius: 4px;"></div>
 
         <!-- Video element -->
-        <video id="preview-video" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 18px;" playsinline></video>
+        <video id="preview-video" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 18px;" playsinline></video>
         <canvas id="preview-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; border-radius: 18px;"></canvas>
         
         <!-- Scanner Laser Sweep animation line -->
