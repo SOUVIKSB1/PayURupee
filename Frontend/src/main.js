@@ -218,6 +218,22 @@ if (sheetShowMyQr) {
   });
 }
 
+const sheetNavCard = document.getElementById('sheet-nav-card');
+if (sheetNavCard) {
+  sheetNavCard.addEventListener('click', () => {
+    if (profileSheetMob) profileSheetMob.classList.add('hidden');
+    goto('card');
+  });
+}
+
+const sheetNavJars = document.getElementById('sheet-nav-jars');
+if (sheetNavJars) {
+  sheetNavJars.addEventListener('click', () => {
+    if (profileSheetMob) profileSheetMob.classList.add('hidden');
+    goto('jars');
+  });
+}
+
 const sheetEditProfile = document.getElementById('sheet-edit-profile');
 if (sheetEditProfile) {
   sheetEditProfile.addEventListener('click', () => {
