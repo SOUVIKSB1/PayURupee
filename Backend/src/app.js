@@ -10,6 +10,7 @@ const userRoutes = require('./routes/users');
 const walletRoutes = require('./routes/wallet');
 const billRoutes = require('./routes/bills');
 const adminRoutes = require('./routes/admin');
+const chatRoutes = require('./routes/chat');
 
 const { errorHandler } = require('./middleware/errorHandler');
 
@@ -47,6 +48,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/bills', billRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/chat', chatRoutes);
 
 // health
 app.get('/health', (req, res) => res.json({ status: 'ok' }));

@@ -1080,7 +1080,7 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
   });
 
   const submitReqBtn = drawer.querySelector('#drawer-req-submit');
-  submitReqBtn.addEventListener('click', () => {
+  submitReqBtn.addEventListener('click', async () => {
     const amtInput = drawer.querySelector('#drawer-req-amount');
     const amount = Number(amtInput.value);
     if (!amount || amount <= 0) {
@@ -1089,22 +1089,22 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
     }
 
     const msg = `Requested ₹${amount.toFixed(2)}`;
-    saveLocalMessage(msg, true, amount);
+    await saveLocalMessage(msg, true, amount);
     
     amtInput.value = '';
     reqPanel.style.display = 'none';
     showToast(`Request of ₹${amount.toFixed(2)} sent to ${contact.name || contact.email}`, 'success');
-    loadChatHistory();
+    await loadChatHistory();
   });
 
   const msgSendBtn = drawer.querySelector('#drawer-btn-send-msg');
-  msgSendBtn.addEventListener('click', () => {
+  msgSendBtn.addEventListener('click', async () => {
     const text = msgInput.value.trim();
     if (!text) return;
     
-    saveLocalMessage(text, false);
+    await saveLocalMessage(text, false);
     msgInput.value = '';
-    loadChatHistory();
+    await loadChatHistory();
   });
 
   msgInput.addEventListener('keydown', (e) => {
@@ -1113,24 +1113,25 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
     }
   });
 
-  const msgKey = `chat_msg_${[store.user.email, contact.email].sort().join('_')}`;
-  function saveLocalMessage(text, isRequest = false, amount = 0) {
-    const history = JSON.parse(localStorage.getItem(msgKey) || '[]');
-    history.push({
-      id: 'msg_' + Date.now(),
-      text,
-      isRequest,
-      amount,
-      sender: store.user.email,
-      timestamp: new Date().toISOString()
-    });
-    localStorage.setItem(msgKey, JSON.stringify(history));
+  async function saveLocalMessage(text, isRequest = false, amount = 0) {
+    try {
+      await apiFetch('/chat/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientEmail: contact.email,
+          text,
+          isRequest,
+          amount
+        })
+      });
+    } catch (err) {
+      showToast(err.message || 'Failed to send message', 'error');
+    }
   }
 
   const chatListEl = drawer.querySelector('#drawer-chat-list');
   async function loadChatHistory() {
-    chatListEl.innerHTML = '<div class="smallmuted" style="text-align:center; padding:12px;">Loading activity...</div>';
-    
     try {
       const txRes = await apiFetch('/wallet/history');
       const allTx = txRes.data || [];
@@ -1140,7 +1141,8 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
         return toEmail === contact.email || fromEmail === contact.email;
       });
 
-      const stashedMsgs = JSON.parse(localStorage.getItem(msgKey) || '[]');
+      const chatRes = await apiFetch(`/chat/history?contactEmail=${encodeURIComponent(contact.email)}`);
+      const dbMsgs = chatRes.data || [];
 
       const timeline = [];
       matchedTx.forEach(tx => {
@@ -1150,10 +1152,10 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
           data: tx
         });
       });
-      stashedMsgs.forEach(msg => {
+      dbMsgs.forEach(msg => {
         timeline.push({
           type: 'msg',
-          date: new Date(msg.timestamp),
+          date: new Date(msg.timestamp || msg.createdAt),
           data: msg
         });
       });
