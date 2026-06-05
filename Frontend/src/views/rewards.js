@@ -178,9 +178,15 @@ export async function renderRewards() {
 
   main.innerHTML = `
     <div class="rewards-arena-container fade-in">
-      <div style="margin-bottom: 24px;">
-        <h2 style="margin: 0; color: #fff;">Reward Arena</h2>
-        <p class="smallmuted" style="margin: 4px 0 0;">Spin the Fortune Wheel to claim your cashback rewards!</p>
+      <div style="margin-bottom: 24px; display: flex; align-items: center; gap: 14px;">
+        <button class="small-btn ghost" id="btn-rewards-back" style="padding: 8px 12px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Back
+        </button>
+        <div>
+          <h2 style="margin: 0; color: #fff;">Reward Arena</h2>
+          <p class="smallmuted" style="margin: 4px 0 0;">Spin the Fortune Wheel to claim your cashback rewards!</p>
+        </div>
       </div>
 
       <div class="rewards-split-layout">
@@ -264,6 +270,12 @@ export async function renderRewards() {
       </div>
     </div>
   `;
+
+  // Bind back button
+  const btnBack = document.getElementById('btn-rewards-back');
+  if (btnBack) {
+    btnBack.addEventListener('click', () => goto('dashboard'));
+  }
 
   // Draw the wheel if canvas exists
   const canvas = document.getElementById('canvas-wheel');

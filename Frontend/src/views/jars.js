@@ -183,6 +183,34 @@ function injectJarsStyles() {
     .jar-card[data-cat="gift"] { --liquid-color: linear-gradient(180deg, #ff9a9e 0%, #fecfef 100%); }
     .jar-card[data-cat="home"] { --liquid-color: linear-gradient(180deg, #11998e 0%, #38ef7d 100%); }
     .jar-card[data-cat="other"] { --liquid-color: linear-gradient(180deg, #ff7e5f 0%, #feb47b 100%); }
+
+    /* Modal Form Inputs Improvements */
+    .jar-modal-input {
+      width: 100%;
+      box-sizing: border-box;
+      background: rgba(255, 255, 255, 0.04) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 12px !important;
+      padding: 12px 14px !important;
+      color: #fff !important;
+      font-size: 14px !important;
+      outline: none !important;
+      transition: all 0.3s ease !important;
+    }
+    .jar-modal-input:focus {
+      border-color: var(--accent1, #ff7e5f) !important;
+      box-shadow: 0 0 10px rgba(255, 126, 95, 0.2) !important;
+      background: rgba(255, 255, 255, 0.08) !important;
+    }
+    .jar-modal-label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted, #8a8e9e);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -193,9 +221,15 @@ export async function renderJars() {
   main.innerHTML = `
     <div class="jars-container fade-in">
       <div class="jars-header">
-        <div>
-          <h2 style="margin: 0; color: #fff;">Piggy Jars</h2>
-          <p class="smallmuted" style="margin: 4px 0 0;">Create glassmorphic goals and save automatically</p>
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <button class="small-btn ghost" id="btn-jars-back" style="padding: 8px 12px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Back
+          </button>
+          <div>
+            <h2 style="margin: 0; color: #fff;">Piggy Jars</h2>
+            <p class="smallmuted" style="margin: 4px 0 0;">Create glassmorphic goals and save automatically</p>
+          </div>
         </div>
         <button class="small-btn solid" id="btn-create-jar-header">
           <span>+ Create Goal</span>
@@ -208,7 +242,8 @@ export async function renderJars() {
     </div>
   `;
 
-  // Register Header create goal button
+  // Register Header buttons
+  document.getElementById('btn-jars-back').addEventListener('click', () => goto('dashboard'));
   document.getElementById('btn-create-jar-header').addEventListener('click', showCreateGoalModal);
 
   // Fetch jars list
@@ -321,16 +356,16 @@ function showCreateGoalModal() {
     </div>
     <form id="create-jar-form" style="display: flex; flex-direction: column; gap: 16px; margin-top: 16px;">
       <div class="form-group">
-        <label>Goal Name</label>
-        <input type="text" id="jar-title" placeholder="e.g. New Gaming PC, Bali Trip" required style="width:100%; box-sizing:border-box;">
+        <label class="jar-modal-label">Goal Name</label>
+        <input type="text" id="jar-title" class="jar-modal-input" placeholder="e.g. New Gaming PC, Bali Trip" required>
       </div>
       <div class="form-group">
-        <label>Target Amount (₹)</label>
-        <input type="number" id="jar-target" min="10" placeholder="e.g. 5000" required style="width:100%; box-sizing:border-box;">
+        <label class="jar-modal-label">Target Amount (₹)</label>
+        <input type="number" id="jar-target" class="jar-modal-input" min="10" placeholder="e.g. 5000" required>
       </div>
       <div class="form-group">
-        <label>Category</label>
-        <select id="jar-category" style="width:100%; box-sizing:border-box; background:#181920; color:#fff; padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.1);">
+        <label class="jar-modal-label">Category</label>
+        <select id="jar-category" class="jar-modal-input">
           <option value="other">🔮 General / Other</option>
           <option value="travel">✈️ Travel & Holiday</option>
           <option value="tech">💻 Electronics & Gadgets</option>
@@ -338,7 +373,7 @@ function showCreateGoalModal() {
           <option value="home">🏠 Home Improvement</option>
         </select>
       </div>
-      <button type="submit" class="btn-primary" style="margin-top: 8px;">Create Jar</button>
+      <button type="submit" class="btn" style="width: 100%; margin-top: 8px;">Create Jar</button>
     </form>
   `;
 
@@ -391,11 +426,11 @@ function showDepositModal(jar) {
     </div>
     <form id="deposit-jar-form" style="display: flex; flex-direction: column; gap: 16px;">
       <div class="form-group">
-        <label>Amount (₹)</label>
-        <input type="number" id="deposit-amount" min="1" step="any" placeholder="Enter amount to save" required style="width:100%; box-sizing:border-box;">
-        <span class="smallmuted" style="display:block; margin-top: 4px;">Available balance: ${formatCurrency(store.user?.balance || 0)}</span>
+        <label class="jar-modal-label">Amount (₹)</label>
+        <input type="number" id="deposit-amount" class="jar-modal-input" min="1" step="any" placeholder="Enter amount to save" required>
+        <span class="smallmuted" style="display:block; margin-top: 6px;">Available balance: ${formatCurrency(store.user?.balance || 0)}</span>
       </div>
-      <button type="submit" class="btn-primary" style="margin-top: 8px;">Confirm Deposit</button>
+      <button type="submit" class="btn" style="width: 100%; margin-top: 8px;">Confirm Deposit</button>
     </form>
   `;
 
@@ -466,11 +501,11 @@ function showWithdrawModal(jar) {
     </div>
     <form id="withdraw-jar-form" style="display: flex; flex-direction: column; gap: 16px;">
       <div class="form-group">
-        <label>Amount (₹)</label>
-        <input type="number" id="withdraw-amount" min="1" max="${jar.currentAmount}" step="any" placeholder="Enter amount to withdraw" required style="width:100%; box-sizing:border-box;">
-        <span class="smallmuted" style="display:block; margin-top: 4px;">Goal balance: ${formatCurrency(jar.currentAmount)}</span>
+        <label class="jar-modal-label">Amount (₹)</label>
+        <input type="number" id="withdraw-amount" class="jar-modal-input" min="1" max="${jar.currentAmount}" step="any" placeholder="Enter amount to withdraw" required>
+        <span class="smallmuted" style="display:block; margin-top: 6px;">Goal balance: ${formatCurrency(jar.currentAmount)}</span>
       </div>
-      <button type="submit" class="btn-primary" style="margin-top: 8px;">Confirm Withdrawal</button>
+      <button type="submit" class="btn" style="width: 100%; margin-top: 8px;">Confirm Withdrawal</button>
     </form>
   `;
 

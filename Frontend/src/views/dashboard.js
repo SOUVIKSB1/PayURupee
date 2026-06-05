@@ -76,13 +76,6 @@ export async function renderDashboard() {
               </div>
               <span>My QR</span>
             </button>
-
-            <button class="paytm-item" id="hero-jars">
-              <div class="paytm-icon-wrapper">
-                <span style="font-size: 18px;">🔮</span>
-              </div>
-              <span>Piggy Jars</span>
-            </button>
             
             <button class="paytm-item" id="hero-passbook">
               <div class="paytm-icon-wrapper">
@@ -133,6 +126,21 @@ export async function renderDashboard() {
                 </div>
                 <span>Scan QR</span>
               </button>
+            </div>
+          </div>
+
+          <!-- Wealth & Savings Section -->
+          <div class="paytm-section" id="wealth-savings-section">
+            <h3>Wealth & Savings</h3>
+            <div style="display: flex; gap: 16px; padding: 16px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 20px; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="font-size: 26px; background: rgba(255, 126, 95, 0.15); width: 50px; height: 50px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">🔮</div>
+                <div>
+                  <h4 style="margin: 0 0 4px; color: #fff; font-size: 13.5px; font-weight: 700;">Smart Piggy Jars</h4>
+                  <p class="smallmuted" style="margin: 0; font-size: 11px; line-height: 1.4;">Set savings goals with glassmorphic containers and liquid waves</p>
+                </div>
+              </div>
+              <button class="small-btn solid" id="dashboard-btn-jars" style="padding: 8px 16px; font-weight: 700; flex-shrink: 0;">Open Jars</button>
             </div>
           </div>
           
@@ -189,7 +197,7 @@ export async function renderDashboard() {
   document.getElementById('hero-topup').addEventListener('click', () => goto('topup'));
   document.getElementById('hero-passbook').addEventListener('click', () => goto('history'));
   document.getElementById('hero-my-qr').addEventListener('click', () => showMyQrModal());
-  document.getElementById('hero-jars').addEventListener('click', () => goto('jars'));
+  document.getElementById('dashboard-btn-jars').addEventListener('click', () => goto('jars'));
   const updateRewardsBanner = () => {
     const wrapper = document.getElementById('rewards-banner-wrapper');
     if (!wrapper) return;
