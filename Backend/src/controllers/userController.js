@@ -6,9 +6,11 @@ const Jimp = require('jimp');
 const QrCode = require('qrcode-reader');
 
 const getProfile = async (req, res) => {
-  const user = await User.findById(req.user._id).select('-password -upiPin');
+  const user = await User.findById(req.user._id).select('-password');
+  if (!user) return res.status(404).json({ message: 'User not found' });
   const userObj = user.toObject();
   userObj.hasUpiPin = !!user.upiPin;
+  delete userObj.upiPin;
   res.json({ user: userObj });
 };
 
