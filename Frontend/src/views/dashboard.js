@@ -421,9 +421,30 @@ export async function renderDashboard() {
       transactionsList.innerHTML = '<div class="smallmuted" style="text-align: center; padding: 12px 0;">No recent transactions</div>';
     } else {
       history.forEach(tx => {
-        const isDebit = tx.type === 'transfer' || tx.type === 'bill' || tx.type === 'send';
-        const typeLabel = (tx.type === 'deposit' || tx.type === 'topup') ? 'Added Money' : (tx.type === 'bill' ? 'Bill Payment' : 'Sent Money');
-        const metaInfo = (tx.type === 'deposit' || tx.type === 'topup') ? (tx.meta?.note || 'Wallet') : (tx.toUser ? tx.toUser.email : (tx.meta?.note || tx.meta?.provider || 'Secure Transfer'));
+        const fromId = (tx.from && typeof tx.from === 'object') ? tx.from._id : tx.from;
+        const isSender = (tx.type === 'send' || tx.type === 'transfer') && String(fromId) === String(store.user?.id || store.user?._id);
+        
+        let isDebit = false;
+        if (tx.type === 'bill') {
+          isDebit = true;
+        } else if (tx.type === 'topup' || tx.type === 'deposit') {
+          isDebit = false;
+        } else {
+          isDebit = isSender;
+        }
+
+        const typeLabel = (tx.type === 'deposit' || tx.type === 'topup') ? 'Added Money' : 
+                          (tx.type === 'bill' ? 'Bill Payment' : 
+                          (isSender ? 'Sent Money' : 'Received Money'));
+
+        const fromEmail = (tx.from && typeof tx.from === 'object') ? tx.from.email : (tx.fromUser ? tx.fromUser.email : '');
+        const toEmail = (tx.to && typeof tx.to === 'object') ? tx.to.email : (tx.toUser ? tx.toUser.email : '');
+        const partnerEmail = isSender ? toEmail : fromEmail;
+
+        const metaInfo = (tx.type === 'deposit' || tx.type === 'topup') ? (tx.meta?.note || 'Wallet') : 
+                         (tx.type === 'bill' ? (tx.meta?.provider || 'Bill Payment') :
+                         (partnerEmail || tx.meta?.note || 'Secure Transfer'));
+
         const amountFormatted = (isDebit ? '-' : '+') + formatCurrency(tx.amount);
         const amountColor = isDebit ? '#ff5c6c' : '#00d26a';
         

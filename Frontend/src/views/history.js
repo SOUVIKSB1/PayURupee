@@ -1,6 +1,7 @@
 import { apiFetch } from '../api.js';
 import { escapeHtml, formatCurrency } from '../utils.js';
 import { goto } from '../router.js';
+import { store } from '../store.js';
 
 export async function renderHistory() {
   const main = document.getElementById('main');
@@ -33,20 +34,35 @@ export async function renderHistory() {
           <tbody>
             ${data.map((tx, idx) => {
               const dt = new Date(tx.createdAt).toLocaleString();
-              const type = escapeHtml(tx.type === 'send' ? 'Sent Money' : tx.type === 'bill' ? 'Bill Payment' : tx.type === 'topup' ? 'Added Money' : tx.type);
+              const fromId = (tx.from && typeof tx.from === 'object') ? tx.from._id : tx.from;
+              const isSender = (tx.type === 'send' || tx.type === 'transfer') && String(fromId) === String(store.user?.id || store.user?._id);
+              
+              let isDebit = false;
+              if (tx.type === 'bill') {
+                isDebit = true;
+              } else if (tx.type === 'topup' || tx.type === 'deposit') {
+                isDebit = false;
+              } else {
+                isDebit = isSender;
+              }
+
+              const type = escapeHtml(tx.type === 'deposit' || tx.type === 'topup' ? 'Added Money' : 
+                                     tx.type === 'bill' ? 'Bill Payment' : 
+                                     isSender ? 'Sent Money' : 'Received Money');
               
               let detailText = '';
-              if (tx.type === 'send') {
-                detailText = `To: ${tx.to?.email || tx.meta?.toEmail || tx.meta?.recipientEmail || 'N/A'}`;
-              } else if (tx.type === 'receive') {
-                detailText = `From: ${tx.from?.email || 'N/A'}`;
+              if (tx.type === 'send' || tx.type === 'transfer') {
+                if (isSender) {
+                  detailText = `To: ${tx.to?.email || tx.meta?.toEmail || tx.meta?.recipientEmail || 'N/A'}`;
+                } else {
+                  detailText = `From: ${tx.from?.email || 'N/A'}`;
+                }
               } else if (tx.type === 'bill') {
                 detailText = `Provider: ${tx.meta?.provider || 'N/A'}`;
               } else {
                 detailText = tx.meta?.note || '';
               }
               
-              const isDebit = tx.type === 'send' || tx.type === 'bill';
               const amt = (isDebit ? '-' : '+') + formatCurrency(tx.amount);
               const amtColor = isDebit ? '#ff5c6c' : '#00d26a';
               return `<tr class="tx-row" data-index="${idx}" style="cursor: pointer;">
