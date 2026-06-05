@@ -979,10 +979,24 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
   const msgInput = drawer.querySelector('#drawer-msg-input');
   if (msgInput) msgInput.focus();
 
+  let refreshInterval = setInterval(() => {
+    if (document.body.contains(overlay)) {
+      loadChatHistory();
+    } else {
+      clearInterval(refreshInterval);
+    }
+  }, 2500);
+
   const closeBtn = drawer.querySelector('#drawer-close');
-  closeBtn.addEventListener('click', () => overlay.remove());
+  closeBtn.addEventListener('click', () => {
+    clearInterval(refreshInterval);
+    overlay.remove();
+  });
   overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.remove();
+    if (e.target === overlay) {
+      clearInterval(refreshInterval);
+      overlay.remove();
+    }
   });
 
   const sendPanel = drawer.querySelector('#drawer-send-panel');
