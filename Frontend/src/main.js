@@ -50,10 +50,6 @@ const USER_DESKTOP_NAV = `
     <span style="font-size: 14px; margin-right: 6px; display: inline-block;">🔮</span>
     <span>Piggy Jars</span>
   </button>
-  <button id="nav-card" class="nav-btn">
-    <span style="font-size: 14px; margin-right: 6px; display: inline-block;">💳</span>
-    <span>Virtual Card</span>
-  </button>
   <button id="nav-history" class="nav-btn">
     <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
     <span>History</span>
@@ -218,13 +214,7 @@ if (sheetShowMyQr) {
   });
 }
 
-const sheetNavCard = document.getElementById('sheet-nav-card');
-if (sheetNavCard) {
-  sheetNavCard.addEventListener('click', () => {
-    if (profileSheetMob) profileSheetMob.classList.add('hidden');
-    goto('card');
-  });
-}
+
 
 const sheetNavJars = document.getElementById('sheet-nav-jars');
 if (sheetNavJars) {
