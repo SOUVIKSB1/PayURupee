@@ -2326,7 +2326,7 @@ export function renderSpendingInsights(txList, containerId = 'spending-insights-
       </div>
 
       <div class="insights-body">
-        <!-- Ring chart -->
+        <!-- Ring chart centred on mobile -->
         <div class="insights-ring-wrap">
           <div class="insights-ring" style="background: ${conicGrad}">
             <div class="insights-ring-inner">
@@ -2335,8 +2335,10 @@ export function renderSpendingInsights(txList, containerId = 'spending-insights-
           </div>
         </div>
 
-        <!-- Legend + stats -->
+        <!-- Stats: full-width on mobile, side column on desktop -->
         <div class="insights-stats">
+
+          <!-- 3-column legend chips (mobile) / vertical list (desktop) -->
           <div class="insights-legend">
             <div class="insights-legend-item">
               <span class="insights-dot" style="background:#ff7a00"></span>
@@ -2350,7 +2352,7 @@ export function renderSpendingInsights(txList, containerId = 'spending-insights-
             </div>
             <div class="insights-legend-item">
               <span class="insights-dot" style="background:#00d26a"></span>
-              <span>Received</span>
+              <span>Rcvd</span>
               <strong class="insights-pct">${recvPct}%</strong>
             </div>
           </div>
