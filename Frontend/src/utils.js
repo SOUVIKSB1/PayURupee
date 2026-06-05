@@ -561,37 +561,67 @@ export function showMyQrModal() {
   
   const modal = document.createElement('div');
   modal.className = 'modal qr-generator-modal';
-  modal.style.maxWidth = '360px';
+  modal.style.maxWidth = '370px';
   modal.style.textAlign = 'center';
   
   modal.innerHTML = `
-    <div class="header">
-      <h3>My UPI QR Code</h3>
+    <div class="header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 20px;">
+      <h3 style="margin: 0; color: #fff; font-size: 18px; font-weight: 700;">Receive Money</h3>
       <button class="close" id="my-qr-close">✕</button>
     </div>
     
-    <div class="qr-modal-body">
-      <div class="qr-user-details">
-        <div class="qr-user-name">${escapeHtml(store.user.name)}</div>
-        <div class="qr-user-upi">UPI ID: ${escapeHtml(store.user.email)}</div>
-      </div>
-      
-      <div class="qr-card">
-        <div class="qr-card-brand">PayU₹upee</div>
-        <div class="qr-code-frame">
-          <img id="my-qr-image" src="" alt="UPI QR Code" />
+    <div class="qr-modal-body" style="padding: 0;">
+      <!-- Google Pay-style White QR Card -->
+      <div class="gpay-qr-card" style="background: #ffffff; border-radius: 20px; width: 100%; max-width: 320px; margin: 0 auto 20px; box-shadow: 0 12px 36px rgba(0,0,0,0.5); overflow: hidden; position: relative;">
+        <!-- Card Blue Header -->
+        <div style="background: #00a2ff; padding: 20px; color: #ffffff; text-align: center;">
+          <div style="font-weight: 850; font-size: 19px; letter-spacing: 0.5px;">PayU₹upee</div>
+          <div style="font-size: 10px; opacity: 0.85; text-transform: uppercase; font-weight: 700; margin-top: 2px; letter-spacing: 0.5px;">Secure UPI QR</div>
         </div>
-        <div class="qr-card-footer">Scan & Pay Securely</div>
+        
+        <!-- Avatar overlapping header -->
+        <div style="width: 54px; height: 54px; border-radius: 50%; background: #ff7a00; border: 3px solid #ffffff; margin: -27px auto 0; display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 800; font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+          ${escapeHtml(store.user.name.charAt(0).toUpperCase())}
+        </div>
+        
+        <!-- Profile details -->
+        <div style="text-align: center; margin-top: 10px; padding: 0 16px;">
+          <div style="color: #0f172a; font-weight: 800; font-size: 16px;">${escapeHtml(store.user.name)}</div>
+          <div style="color: #64748b; font-size: 11.5px; font-weight: 600; margin-top: 2px; word-break: break-all;">UPI ID: ${escapeHtml(store.user.email)}</div>
+        </div>
+        
+        <!-- QR Code container with relative center badge -->
+        <div style="position: relative; width: 190px; height: 190px; margin: 18px auto; background: #ffffff; padding: 4px; box-sizing: border-box;">
+          <img id="my-qr-image" src="" alt="UPI QR Code" style="width: 100%; height: 100%; display: block;" />
+          <!-- Logo badge in center of QR -->
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 50%; background: #ff7a00; border: 2.5px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 800; font-size: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+            ₹
+          </div>
+        </div>
+        
+        <!-- Call to Action -->
+        <div style="text-align: center; color: #475569; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
+          Scan with any UPI app to pay
+        </div>
+        
+        <!-- UPI Apps Footer Row -->
+        <div style="display: flex; gap: 8px; justify-content: center; align-items: center; padding-bottom: 20px;">
+          <span style="font-size: 8px; padding: 3px 6px; border-radius: 4px; background: #005b8a; color: #fff; font-weight: 800;">BHIM</span>
+          <span style="font-size: 8px; padding: 3px 6px; border-radius: 4px; background: #ea4335; color: #fff; font-weight: 800;">GPay</span>
+          <span style="font-size: 8px; padding: 3px 6px; border-radius: 4px; background: #5f259f; color: #fff; font-weight: 800;">PhonePe</span>
+          <span style="font-size: 8px; padding: 3px 6px; border-radius: 4px; background: #002e7e; color: #fff; font-weight: 800;">Paytm</span>
+        </div>
       </div>
       
-      <div class="qr-amount-selector">
-        <label class="qr-label">Request Specific Amount (Optional)</label>
-        <input type="number" id="my-qr-amount" class="input" placeholder="Enter amount to receive (e.g. 500)" />
+      <!-- Specific Amount Request Selector -->
+      <div class="qr-amount-selector" style="text-align: left; width: 100%; max-width: 320px; margin: 0 auto 16px;">
+        <label class="qr-label" style="font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 8px; letter-spacing: 0.4px;">Request Specific Amount (Optional)</label>
+        <input type="number" id="my-qr-amount" class="input" placeholder="Enter amount to receive (e.g. 500)" style="width: 100%; margin-bottom: 0;" />
       </div>
     </div>
     
-    <div class="qr-actions">
-      <button class="btn solid-blue" id="my-qr-download">Download QR Code</button>
+    <div class="qr-actions" style="width: 100%; max-width: 320px; margin: 0 auto;">
+      <button class="btn" id="my-qr-download" style="width: 100%; background: #00a2ff; border: none; font-weight: 700; color: #fff; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; cursor: pointer;">Download QR Code</button>
     </div>
   `;
   
@@ -600,6 +630,7 @@ export function showMyQrModal() {
   
   const qrImg = modal.querySelector('#my-qr-image');
   const amtInput = modal.querySelector('#my-qr-amount');
+  const downloadBtn = modal.querySelector('#my-qr-download');
   
   function updateQrCode() {
     const amount = amtInput.value.trim();
@@ -623,22 +654,191 @@ export function showMyQrModal() {
   });
   
   // Download QR code option
-  modal.querySelector('#my-qr-download').addEventListener('click', async () => {
+  downloadBtn.addEventListener('click', async () => {
+    downloadBtn.disabled = true;
+    downloadBtn.textContent = 'Generating...';
     try {
-      const response = await fetch(qrImg.src);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
+      // Create offscreen canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = 600;
+      canvas.height = 840;
+      const ctx = canvas.getContext('2d');
+      
+      // Draw canvas outer background frame
+      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      grad.addColorStop(0, '#0a0b0e');
+      grad.addColorStop(1, '#14151b');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw ambient light reflection top left
+      ctx.fillStyle = 'rgba(0, 162, 255, 0.08)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 250, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(255, 122, 0, 0.05)';
+      ctx.beginPath();
+      ctx.arc(canvas.width, canvas.height, 300, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Card container coordinates
+      const cardX = 60;
+      const cardY = 80;
+      const cardW = 480;
+      const cardH = 680;
+      const cardR = 28;
+      
+      // Draw card white container
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.55)';
+      ctx.shadowBlur = 36;
+      ctx.shadowOffsetY = 16;
+      ctx.beginPath();
+      ctx.roundRect(cardX, cardY, cardW, cardH, cardR);
+      ctx.fill();
+      ctx.shadowColor = 'transparent'; // reset shadow
+      
+      // Draw GPay-style Blue Card Header Bar
+      const headerH = 110;
+      ctx.fillStyle = '#00a2ff'; 
+      ctx.beginPath();
+      ctx.roundRect(cardX, cardY, cardW, headerH, [cardR, cardR, 0, 0]);
+      ctx.fill();
+      
+      // Header brand text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 26px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('PayU₹upee', cardX + cardW / 2, cardY + 46);
+      
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillText('SECURE UPI PAYMENTS', cardX + cardW / 2, cardY + 74);
+      
+      // Draw User Avatar Circle on header line
+      const avatarR = 36;
+      const avatarX = cardX + cardW / 2;
+      const avatarY = cardY + headerH;
+      
+      ctx.fillStyle = '#ff7a00';
+      ctx.beginPath();
+      ctx.arc(avatarX, avatarY, avatarR, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Border around avatar
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      
+      // Initial letter in avatar
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 28px sans-serif';
+      ctx.fillText(store.user.name.charAt(0).toUpperCase(), avatarX, avatarY + 10);
+      
+      // Draw User Profile Details below avatar
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText(store.user.name, cardX + cardW / 2, avatarY + avatarR + 32);
+      
+      ctx.fillStyle = '#64748b';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.fillText(`UPI ID: ${store.user.email}`, cardX + cardW / 2, avatarY + avatarR + 56);
+      
+      // Draw QR Code Image
+      const qrSize = 250;
+      const qrX = cardX + (cardW - qrSize) / 2;
+      const qrY = avatarY + avatarR + 85;
+      
+      const qrImage = new Image();
+      qrImage.crossOrigin = 'anonymous';
+      qrImage.src = qrImg.src;
+      
+      await new Promise((resImg, rejImg) => {
+        qrImage.onload = resImg;
+        qrImage.onerror = rejImg;
+      });
+      
+      ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
+      
+      // Draw Page Logo badge in the center of QR code
+      const badgeSize = 46;
+      const badgeX = qrX + (qrSize - badgeSize) / 2;
+      const badgeY = qrY + (qrSize - badgeSize) / 2;
+      
+      // Orange rounded badge background
+      ctx.fillStyle = '#ff7a00';
+      ctx.beginPath();
+      ctx.arc(badgeX + badgeSize/2, badgeY + badgeSize/2, badgeSize/2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // White border
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      // Rupee symbol "₹" inside badge
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillText('₹', badgeX + badgeSize/2, badgeY + badgeSize/2 + 8);
+      
+      // Footer: scan instructions & accepted app logos
+      ctx.fillStyle = '#475569';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillText('Scan with any UPI app to pay', cardX + cardW / 2, qrY + qrSize + 36);
+      
+      // Draw BHIM, GPay, PhonePe, Paytm logos at bottom
+      const logoY = qrY + qrSize + 60;
+      const logoSpacing = 68;
+      const startX = cardX + cardW / 2 - (logoSpacing * 1.5);
+      
+      const apps = [
+        { name: 'BHIM', color: '#005b8a' },
+        { name: 'GPay', color: '#ea4335' },
+        { name: 'PhonePe', color: '#5f259f' },
+        { name: 'Paytm', color: '#002e7e' }
+      ];
+      
+      apps.forEach((app, idx) => {
+        const x = startX + idx * logoSpacing;
+        
+        ctx.fillStyle = app.color;
+        ctx.beginPath();
+        ctx.roundRect(x - 20, logoY, 40, 24, 6);
+        ctx.fill();
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.fillText(app.name, x, logoY + 15);
+      });
+      
+      const dataUrl = canvas.toDataURL('image/png');
       const a = document.createElement('a');
-      a.href = url;
+      a.href = dataUrl;
       a.download = `payurupee-qr-${store.user.name.toLowerCase().replace(/\s+/g, '-')}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('Failed to download QR code image', err);
-      // Fallback: Open in new tab
-      window.open(qrImg.src, '_blank');
+      console.error('Failed to draw QR card canvas', err);
+      // Fallback: download raw QR code image
+      try {
+        const response = await fetch(qrImg.src);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `payurupee-qr-raw-${store.user.name.toLowerCase().replace(/\s+/g, '-')}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err2) {
+        window.open(qrImg.src, '_blank');
+      }
+    } finally {
+      downloadBtn.disabled = false;
+      downloadBtn.textContent = 'Download QR Code';
     }
   });
 }
