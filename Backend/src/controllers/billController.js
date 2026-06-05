@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 const BillProvider = require('../models/billProvider');
 const Transaction = require('../models/transaction');
 const User = require('../models/user');
@@ -15,7 +16,7 @@ const listProviders = async (req, res) => {
 
 const payBill = async (req, res) => {
   const user = req.user;
-  const { providerCode, consumerNumber, amount } = req.body;
+  const { providerCode, consumerNumber, amount, upiPin } = req.body;
 
   if (!providerCode || !consumerNumber || amount == null) {
     return res.status(400).json({ ok: false, color: 'red', message: 'Missing fields' });
@@ -36,6 +37,22 @@ const payBill = async (req, res) => {
     const provider = await BillProvider.findOne({ code: providerCode });
     if (!provider) {
       return res.status(400).json({ ok: false, color: 'red', message: 'Invalid provider' });
+    }
+
+    // UPI PIN verification
+    const uCheck = await User.findById(user._id);
+    if (!uCheck) {
+      return res.status(404).json({ ok: false, color: 'red', message: 'User not found' });
+    }
+    if (!uCheck.upiPin) {
+      return res.status(400).json({ ok: false, color: 'red', message: 'UPI PIN not set. Please set your PIN first.' });
+    }
+    if (!upiPin) {
+      return res.status(400).json({ ok: false, color: 'red', message: 'UPI PIN is required' });
+    }
+    const pinOk = await bcrypt.compare(upiPin, uCheck.upiPin);
+    if (!pinOk) {
+      return res.status(403).json({ ok: false, color: 'red', message: 'Invalid UPI PIN' });
     }
 
     let session = null;

@@ -1,7 +1,7 @@
 import { apiFetch } from '../api.js';
 import { store, setAuth } from '../store.js';
 import { goto } from '../router.js';
-import { isDemoMode, showStatusOverlay } from '../utils.js';
+import { isDemoMode, showStatusOverlay, showVerifyPinModal } from '../utils.js';
 import { addNotification } from '../notifications.js';
 
 export function renderSend() {
@@ -68,11 +68,20 @@ export function renderSend() {
       
       const demoMode = isDemoMode();
       
+      let upiPin;
+      try {
+        upiPin = await showVerifyPinModal();
+      } catch (cancelErr) {
+        msg.textContent = 'Payment cancelled';
+        msg.className = 'smallmuted';
+        return;
+      }
+
       // Send request directly to /wallet/send
       const json = await apiFetch('/wallet/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ toEmail, amount, note, demoMode })
+        body: JSON.stringify({ toEmail, amount, note, demoMode, upiPin })
       });
       
       const successMsg = demoMode ? 'Payment sent (demo mode)' : 'Payment sent successfully';

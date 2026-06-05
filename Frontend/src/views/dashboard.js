@@ -1,7 +1,7 @@
 import { apiFetch } from '../api.js';
 import { store } from '../store.js';
 import { goto } from '../router.js';
-import { escapeHtml, formatCurrency, showMyQrModal, triggerCoinRain, showScratchCardModal, showToast, showContactDrawer } from '../utils.js';
+import { escapeHtml, formatCurrency, showMyQrModal, triggerCoinRain, showScratchCardModal, showToast, showContactDrawer, showSetPinModal } from '../utils.js';
 
 // Live count-up animation helper function
 function animateCounter(element, start, end, duration = 1100) {
@@ -292,6 +292,9 @@ export async function renderDashboard() {
       store.user = profile.user;
       localStorage.setItem('ewallet_user', JSON.stringify(store.user));
       updateRewardsBanner();
+      if (!store.user.hasUpiPin) {
+        showSetPinModal();
+      }
     }
     
     // Periodically poll balance state to capture live incoming peer transactions

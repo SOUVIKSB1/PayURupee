@@ -1205,3 +1205,357 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
   await loadChatHistory();
 }
 
+export function showSetPinModal() {
+  return new Promise((resolve) => {
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'set-pin-overlay';
+    overlay.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(4, 4, 6, 0.9); display: flex; align-items: flex-end;
+      justify-content: center; z-index: 99999;
+    `;
+
+    // Create modal container
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      background: #0d0e12; border-top: 3px solid #ff7a00;
+      width: 100%; max-width: 480px; border-radius: 24px 24px 0 0;
+      padding: 32px 24px; box-sizing: border-box;
+      box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+      transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+    `;
+
+    // Contents
+    modal.innerHTML = `
+      <div style="font-size: 40px; margin-bottom: 16px;">🛡️</div>
+      <h3 id="pin-modal-title" style="margin: 0 0 8px; color: #fff; font-size: 20px; font-weight: 800;">Set UPI PIN</h3>
+      <p id="pin-modal-subtitle" style="margin: 0 0 24px; color: var(--muted); font-size: 13.5px;">Choose a secure 6-digit PIN to authorize payments</p>
+      
+      <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 24px;">
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+      </div>
+
+      <div id="pin-modal-error" style="color: #ff5c6c; font-size: 13px; font-weight: 600; min-height: 18px; margin-bottom: 16px;"></div>
+
+      <button id="btn-pin-submit" class="pay-now-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; opacity: 0.5; pointer-events: none;">
+        <span>Continue</span>
+      </button>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Trigger slide up
+    setTimeout(() => {
+      modal.style.transform = 'translateY(0)';
+    }, 10);
+
+    const titleEl = modal.querySelector('#pin-modal-title');
+    const subtitleEl = modal.querySelector('#pin-modal-subtitle');
+    const errorEl = modal.querySelector('#pin-modal-error');
+    const submitBtn = modal.querySelector('#btn-pin-submit');
+    const inputs = Array.from(modal.querySelectorAll('.pin-digit-input'));
+
+    let step = 1; // 1: choose, 2: confirm
+    let chosenPin = '';
+
+    const focusInput = (index) => {
+      inputs.forEach((inp, idx) => {
+        inp.disabled = idx !== index;
+      });
+      if (inputs[index]) {
+        inputs[index].focus();
+      }
+    };
+
+    inputs.forEach((inp, idx) => {
+      // Glow style on focus
+      inp.addEventListener('focus', () => {
+        inp.style.borderColor = '#ff7a00';
+        inp.style.boxShadow = '0 0 10px rgba(255, 122, 0, 0.3)';
+        inp.style.background = 'rgba(255, 122, 0, 0.05)';
+      });
+      inp.addEventListener('blur', () => {
+        inp.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+        inp.style.boxShadow = 'none';
+        inp.style.background = 'rgba(255, 255, 255, 0.03)';
+      });
+
+      inp.addEventListener('input', (e) => {
+        const val = e.target.value.replace(/[^0-9]/g, '');
+        inp.value = val;
+        
+        if (val) {
+          if (idx < 5) {
+            focusInput(idx + 1);
+          } else {
+            // Reached last input
+            inp.blur();
+            submitBtn.style.opacity = '1';
+            submitBtn.style.pointerEvents = 'auto';
+            submitBtn.focus();
+          }
+        }
+        checkSubmitState();
+      });
+
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace') {
+          if (!inp.value && idx > 0) {
+            inputs[idx - 1].value = '';
+            focusInput(idx - 1);
+          } else {
+            inp.value = '';
+          }
+          checkSubmitState();
+        }
+      });
+    });
+
+    const checkSubmitState = () => {
+      const allFilled = inputs.every(inp => inp.value !== '');
+      if (allFilled) {
+        submitBtn.style.opacity = '1';
+        submitBtn.style.pointerEvents = 'auto';
+      } else {
+        submitBtn.style.opacity = '0.5';
+        submitBtn.style.pointerEvents = 'none';
+      }
+    };
+
+    // Auto-focus first input
+    focusInput(0);
+
+    submitBtn.addEventListener('click', async () => {
+      const pinVal = inputs.map(inp => inp.value).join('');
+      if (pinVal.length !== 6) return;
+
+      errorEl.textContent = '';
+
+      if (step === 1) {
+        chosenPin = pinVal;
+        step = 2;
+        
+        // Reset inputs
+        inputs.forEach(inp => inp.value = '');
+        titleEl.textContent = 'Confirm UPI PIN';
+        subtitleEl.textContent = 'Re-enter your 6-digit PIN to confirm';
+        submitBtn.querySelector('span').textContent = 'Confirm & Save';
+        checkSubmitState();
+        focusInput(0);
+      } else {
+        if (pinVal !== chosenPin) {
+          errorEl.textContent = 'PINs do not match. Please start again.';
+          step = 1;
+          chosenPin = '';
+          inputs.forEach(inp => inp.value = '');
+          titleEl.textContent = 'Set UPI PIN';
+          subtitleEl.textContent = 'Choose a secure 6-digit PIN to authorize payments';
+          submitBtn.querySelector('span').textContent = 'Continue';
+          checkSubmitState();
+          focusInput(0);
+          return;
+        }
+
+        // Call set-pin API
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.5';
+        submitBtn.querySelector('span').textContent = 'Saving...';
+        
+        try {
+          const res = await apiFetch('/users/set-pin', {
+            method: 'POST',
+            body: JSON.stringify({ pin: pinVal })
+          });
+          
+          if (res && res.message) {
+            showToast('UPI PIN set successfully!', 'success');
+            if (store.user) store.user.hasUpiPin = true;
+            
+            // Slide down and remove
+            modal.style.transform = 'translateY(100%)';
+            setTimeout(() => {
+              overlay.remove();
+              resolve(true);
+            }, 300);
+          } else {
+            throw new Error('Failed to set PIN');
+          }
+        } catch (err) {
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = '1';
+          submitBtn.querySelector('span').textContent = 'Confirm & Save';
+          errorEl.textContent = err.message || 'Server error. Please try again.';
+        }
+      }
+    });
+  });
+}
+
+export function showVerifyPinModal() {
+  return new Promise((resolve, reject) => {
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'verify-pin-overlay';
+    overlay.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(4, 4, 6, 0.85); display: flex; align-items: flex-end;
+      justify-content: center; z-index: 99999;
+    `;
+
+    // Create modal container
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      background: #0d0e12; border-top: 3px solid #ff7a00;
+      width: 100%; max-width: 480px; border-radius: 24px 24px 0 0;
+      padding: 32px 24px; box-sizing: border-box;
+      box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+      transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      position: relative;
+    `;
+
+    // Contents
+    modal.innerHTML = `
+      <button id="btn-pin-cancel-top" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 4px;">✕</button>
+      <div style="font-size: 40px; margin-bottom: 16px;">🔑</div>
+      <h3 style="margin: 0 0 8px; color: #fff; font-size: 20px; font-weight: 800;">Enter UPI PIN</h3>
+      <p style="margin: 0 0 24px; color: var(--muted); font-size: 13.5px;">Enter your 6-digit PIN to authorize this payment</p>
+      
+      <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 24px;">
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+      </div>
+
+      <div style="display: flex; gap: 12px; width: 100%;">
+        <button id="btn-pin-cancel" class="cancel-btn" style="flex: 1; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; font-weight: 700; cursor: pointer;">Cancel</button>
+        <button id="btn-pin-confirm" class="pay-now-btn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; opacity: 0.5; pointer-events: none;">
+          <span>Submit</span>
+        </button>
+      </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Trigger slide up
+    setTimeout(() => {
+      modal.style.transform = 'translateY(0)';
+    }, 10);
+
+    const submitBtn = modal.querySelector('#btn-pin-confirm');
+    const cancelBtn = modal.querySelector('#btn-pin-cancel');
+    const cancelTopBtn = modal.querySelector('#btn-pin-cancel-top');
+    const inputs = Array.from(modal.querySelectorAll('.pin-digit-input-verify'));
+
+    const handleDismiss = () => {
+      modal.style.transform = 'translateY(100%)';
+      setTimeout(() => {
+        overlay.remove();
+        reject(new Error('User cancelled PIN verification'));
+      }, 300);
+    };
+
+    cancelBtn.addEventListener('click', handleDismiss);
+    cancelTopBtn.addEventListener('click', handleDismiss);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) handleDismiss();
+    });
+
+    const focusInput = (index) => {
+      inputs.forEach((inp, idx) => {
+        inp.disabled = idx !== index;
+      });
+      if (inputs[index]) {
+        inputs[index].focus();
+      }
+    };
+
+    inputs.forEach((inp, idx) => {
+      // Glow style on focus
+      inp.addEventListener('focus', () => {
+        inp.style.borderColor = '#ff7a00';
+        inp.style.boxShadow = '0 0 10px rgba(255, 122, 0, 0.3)';
+        inp.style.background = 'rgba(255, 122, 0, 0.05)';
+      });
+      inp.addEventListener('blur', () => {
+        inp.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+        inp.style.boxShadow = 'none';
+        inp.style.background = 'rgba(255, 255, 255, 0.03)';
+      });
+
+      inp.addEventListener('input', (e) => {
+        const val = e.target.value.replace(/[^0-9]/g, '');
+        inp.value = val;
+        
+        if (val) {
+          if (idx < 5) {
+            focusInput(idx + 1);
+          } else {
+            // Reached last input
+            inp.blur();
+            submitBtn.style.opacity = '1';
+            submitBtn.style.pointerEvents = 'auto';
+            submitBtn.focus();
+            
+            // Auto submit like standard UPI flow
+            setTimeout(() => {
+              submitBtn.click();
+            }, 100);
+          }
+        }
+        checkSubmitState();
+      });
+
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace') {
+          if (!inp.value && idx > 0) {
+            inputs[idx - 1].value = '';
+            focusInput(idx - 1);
+          } else {
+            inp.value = '';
+          }
+          checkSubmitState();
+        }
+      });
+    });
+
+    const checkSubmitState = () => {
+      const allFilled = inputs.every(inp => inp.value !== '');
+      if (allFilled) {
+        submitBtn.style.opacity = '1';
+        submitBtn.style.pointerEvents = 'auto';
+      } else {
+        submitBtn.style.opacity = '0.5';
+        submitBtn.style.pointerEvents = 'none';
+      }
+    };
+
+    // Auto-focus first input
+    focusInput(0);
+
+    submitBtn.addEventListener('click', () => {
+      const pinVal = inputs.map(inp => inp.value).join('');
+      if (pinVal.length !== 6) return;
+
+      modal.style.transform = 'translateY(100%)';
+      setTimeout(() => {
+        overlay.remove();
+        resolve(pinVal);
+      }, 300);
+    });
+  });
+}
+
+

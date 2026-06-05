@@ -1,3 +1,4 @@
+const bcrypt = require('bcrypt');
 const User = require('../models/user');
 const Transaction = require('../models/transaction');
 const { sendMoney } = require('../utils/transactions');
@@ -12,8 +13,21 @@ const getBalance = async (req, res) => {
 
 const send = async (req, res) => {
   const from = req.user;
-  const { toEmail, amount, note, demoMode } = req.body;
+  const { toEmail, amount, note, demoMode, upiPin } = req.body;
   if (!toEmail || !amount) return res.status(400).json({ message: 'Missing fields' });
+
+  // UPI PIN verification
+  const fromUser = await User.findById(req.user._id);
+  if (!fromUser.upiPin) {
+    return res.status(400).json({ message: 'UPI PIN not set. Please set your PIN first.' });
+  }
+  if (!upiPin) {
+    return res.status(400).json({ message: 'UPI PIN is required' });
+  }
+  const pinOk = await bcrypt.compare(upiPin, fromUser.upiPin);
+  if (!pinOk) {
+    return res.status(403).json({ message: 'Invalid UPI PIN' });
+  }
 
   // Demo mode: simplified payment processing
   const isDemoMode = demoMode === true || process.env.NODE_ENV !== 'production';

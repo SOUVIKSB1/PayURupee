@@ -1,12 +1,15 @@
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require('bcrypt');
 const User = require('../models/user');
 const Jimp = require('jimp');
 const QrCode = require('qrcode-reader');
 
 const getProfile = async (req, res) => {
-  const user = await User.findById(req.user._id).select('-password');
-  res.json({ user });
+  const user = await User.findById(req.user._id).select('-password -upiPin');
+  const userObj = user.toObject();
+  userObj.hasUpiPin = !!user.upiPin;
+  res.json({ user: userObj });
 };
 
 const uploadQr = async (req, res) => {
@@ -104,4 +107,58 @@ const listContacts = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, uploadQr, claimReward, listContacts };
+const setUpiPin = async (req, res) => {
+  const { pin } = req.body;
+  if (!pin || !/^\d{6}$/.test(pin)) {
+    return res.status(400).json({ message: 'PIN must be exactly 6 digits' });
+  }
+
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user.upiPin) {
+      return res.status(400).json({ message: 'UPI PIN already set. Use change-pin to update.' });
+    }
+
+    user.upiPin = await bcrypt.hash(pin, 10);
+    await user.save();
+    res.json({ message: 'UPI PIN set successfully' });
+  } catch (err) {
+    console.error('Error setting UPI PIN:', err);
+    res.status(500).json({ message: 'Server error setting UPI PIN' });
+  }
+};
+
+const changeUpiPin = async (req, res) => {
+  const { currentPin, newPin } = req.body;
+  if (!currentPin || !newPin) {
+    return res.status(400).json({ message: 'Both currentPin and newPin are required' });
+  }
+  if (!/^\d{6}$/.test(newPin)) {
+    return res.status(400).json({ message: 'New PIN must be exactly 6 digits' });
+  }
+
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (!user.upiPin) {
+      return res.status(400).json({ message: 'UPI PIN not set yet. Use set-pin first.' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPin, user.upiPin);
+    if (!isMatch) {
+      return res.status(403).json({ message: 'Current UPI PIN is incorrect' });
+    }
+
+    user.upiPin = await bcrypt.hash(newPin, 10);
+    await user.save();
+    res.json({ message: 'UPI PIN changed successfully' });
+  } catch (err) {
+    console.error('Error changing UPI PIN:', err);
+    res.status(500).json({ message: 'Server error changing UPI PIN' });
+  }
+};
+
+module.exports = { getProfile, uploadQr, claimReward, listContacts, setUpiPin, changeUpiPin };

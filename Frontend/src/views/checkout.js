@@ -1,7 +1,7 @@
 import { apiFetch } from '../api.js';
 import { store } from '../store.js';
 import { goto } from '../router.js';
-import { formatCurrency, escapeHtml, showStatusOverlay } from '../utils.js';
+import { formatCurrency, escapeHtml, showStatusOverlay, showVerifyPinModal } from '../utils.js';
 
 export function renderCheckout() {
   const main = document.getElementById('main');
@@ -90,6 +90,16 @@ export function renderCheckout() {
   document.getElementById('btn-confirm-checkout').addEventListener('click', async () => {
     const btn = document.getElementById('btn-confirm-checkout');
     const msg = document.getElementById('checkout-msg');
+    
+    let upiPin;
+    try {
+      upiPin = await showVerifyPinModal();
+    } catch (cancelErr) {
+      msg.textContent = 'Payment cancelled';
+      msg.className = 'smallmuted';
+      return;
+    }
+
     btn.disabled = true;
     msg.innerHTML = '<span class="spinner"></span>Processing payment...';
     msg.className = '';
@@ -102,7 +112,8 @@ export function renderCheckout() {
         body: JSON.stringify({ 
           toEmail: params.merchantEmail, 
           amount: requestedAmt, 
-          note 
+          note,
+          upiPin
         })
       });
 

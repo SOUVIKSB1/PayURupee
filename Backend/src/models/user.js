@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
   qrImagePath: { type: String }, // relative path to uploaded QR
   googleId: { type: String }, // Google OAuth user ID
   isBlocked: { type: Boolean, default: false },
+  upiPin: { type: String, default: null },
   rewards: [{
     message: { type: String, default: '' },
     amount: { type: Number, default: 0 },

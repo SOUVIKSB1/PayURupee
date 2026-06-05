@@ -1,7 +1,7 @@
 import { apiFetch } from '../api.js';
 import { store } from '../store.js';
 import { goto } from '../router.js';
-import { escapeHtml, parseQrPayload, playScanBeepSound, showMyQrModal } from '../utils.js';
+import { escapeHtml, parseQrPayload, playScanBeepSound, showMyQrModal, showVerifyPinModal } from '../utils.js';
 
 export function renderUpload() {
   const main = document.getElementById('main');
@@ -439,6 +439,16 @@ function showQrPreview(parsed, file, raw, dataUrl) {
     
     try {
       if (parsed.email && parsed.amount) {
+        let upiPin;
+        try {
+          upiPin = await showVerifyPinModal();
+        } catch (cancelErr) {
+          msgEl.textContent = 'Payment cancelled';
+          msgEl.style.color = 'var(--muted)';
+          btn.disabled = false;
+          return;
+        }
+
         msgEl.innerHTML = '<span class="spinner"></span>Sending payment...';
         const toEmail = parsed.email;
         const amount = Number(parsed.amount);
@@ -447,7 +457,7 @@ function showQrPreview(parsed, file, raw, dataUrl) {
         const sendRes = await apiFetch('/wallet/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ toEmail, amount, note })
+          body: JSON.stringify({ toEmail, amount, note, upiPin })
         });
 
         msgEl.innerHTML = '';

@@ -1,7 +1,7 @@
 import { apiFetch } from '../api.js';
 import { store } from '../store.js';
 import { goto } from '../router.js';
-import { escapeHtml, showStatusOverlay } from '../utils.js';
+import { escapeHtml, showStatusOverlay, showVerifyPinModal } from '../utils.js';
 import { addNotification } from '../notifications.js';
 
 export async function renderBills() {
@@ -300,13 +300,23 @@ export async function renderBills() {
       return;
     }
 
-    msg.textContent = 'Processing...';
-    msg.className = '';
     try {
+      let upiPin;
+      try {
+        upiPin = await showVerifyPinModal();
+      } catch (cancelErr) {
+        msg.textContent = 'Payment cancelled';
+        msg.className = 'smallmuted';
+        return;
+      }
+
+      msg.textContent = 'Processing...';
+      msg.className = '';
+
       const json = await apiFetch('/bills/pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ providerCode, consumerNumber, amount })
+        body: JSON.stringify({ providerCode, consumerNumber, amount, upiPin })
       });
       msg.textContent = 'Bill paid';
       showStatusOverlay({ type: 'success', message: 'Bill paid successfully' });
