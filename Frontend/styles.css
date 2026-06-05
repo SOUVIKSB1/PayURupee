@@ -90,7 +90,7 @@ body{
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
-  margin: 0 4px; /* Added breathing room for a clean professional look */
+  margin: 0; /* Tight logo tracking with no space */
   vertical-align: middle;
   position: relative;
   top: -1px;
