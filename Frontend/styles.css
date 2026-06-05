@@ -2579,11 +2579,11 @@ input[type="file"].input::file-selector-button{
   will-change: transform;
 }
 .hero-action-btn-primary:hover {
-  transform: translateY(-2px);
+  transform: scale(1.015);
   box-shadow: 0 8px 24px rgba(255, 122, 0, 0.45);
 }
 .hero-action-btn-primary:active {
-  transform: translateY(-0.5px);
+  transform: scale(0.99);
 }
 
 .hero-action-btn-secondary {
@@ -2607,9 +2607,9 @@ input[type="file"].input::file-selector-button{
 .hero-action-btn-secondary:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 122, 0, 0.35); /* Soft matching orange border glow on hover */
-  transform: translateY(-2px);
+  transform: scale(1.015);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 .hero-action-btn-secondary:active {
-  transform: translateY(-0.5px);
+  transform: scale(0.99);
 }
