@@ -1502,11 +1502,11 @@ export function showSetPinModal() {
       
       <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 24px;">
         <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" />
-        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
-        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
-        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
-        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
-        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" />
       </div>
 
       <div id="pin-modal-error" style="color: #ff5c6c; font-size: 13px; font-weight: 600; min-height: 18px; margin-bottom: 16px;"></div>
@@ -1534,9 +1534,6 @@ export function showSetPinModal() {
     let chosenPin = '';
 
     const focusInput = (index) => {
-      inputs.forEach((inp, idx) => {
-        inp.disabled = idx !== index;
-      });
       if (inputs[index]) {
         inputs[index].focus();
       }
@@ -1548,6 +1545,7 @@ export function showSetPinModal() {
         inp.style.borderColor = '#ff7a00';
         inp.style.boxShadow = '0 0 10px rgba(255, 122, 0, 0.3)';
         inp.style.background = 'rgba(255, 122, 0, 0.05)';
+        setTimeout(() => inp.select(), 0);
       });
       inp.addEventListener('blur', () => {
         inp.style.borderColor = 'rgba(255, 255, 255, 0.12)';
@@ -1556,14 +1554,13 @@ export function showSetPinModal() {
       });
 
       inp.addEventListener('input', (e) => {
-        const val = e.target.value.replace(/[^0-9]/g, '');
+        const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 1);
         inp.value = val;
         
         if (val) {
           if (idx < 5) {
             focusInput(idx + 1);
           } else {
-            // Reached last input
             inp.blur();
             submitBtn.style.opacity = '1';
             submitBtn.style.pointerEvents = 'auto';
@@ -1571,6 +1568,28 @@ export function showSetPinModal() {
           }
         }
         checkSubmitState();
+      });
+
+      inp.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const data = (e.clipboardData || window.clipboardData).getData('text');
+        const digits = data.replace(/[^0-9]/g, '').slice(0, 6);
+        if (digits.length > 0) {
+          let fillIndex = idx;
+          for (let i = 0; i < digits.length && fillIndex < 6; i++) {
+            inputs[fillIndex].value = digits[i];
+            fillIndex++;
+          }
+          const nextFocus = Math.min(fillIndex, 5);
+          inputs[nextFocus].focus();
+          checkSubmitState();
+          
+          if (inputs.every(input => input.value !== '')) {
+            submitBtn.style.opacity = '1';
+            submitBtn.style.pointerEvents = 'auto';
+            submitBtn.focus();
+          }
+        }
       });
 
       inp.addEventListener('keydown', (e) => {
@@ -1704,11 +1723,11 @@ export function showVerifyPinModal() {
       
       <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 24px;">
         <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" />
-        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
-        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
-        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
-        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
-        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-input-verify" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" />
       </div>
 
       <div style="display: flex; gap: 12px; width: 100%;">
@@ -1747,9 +1766,6 @@ export function showVerifyPinModal() {
     });
 
     const focusInput = (index) => {
-      inputs.forEach((inp, idx) => {
-        inp.disabled = idx !== index;
-      });
       if (inputs[index]) {
         inputs[index].focus();
       }
@@ -1761,6 +1777,7 @@ export function showVerifyPinModal() {
         inp.style.borderColor = '#ff7a00';
         inp.style.boxShadow = '0 0 10px rgba(255, 122, 0, 0.3)';
         inp.style.background = 'rgba(255, 122, 0, 0.05)';
+        setTimeout(() => inp.select(), 0);
       });
       inp.addEventListener('blur', () => {
         inp.style.borderColor = 'rgba(255, 255, 255, 0.12)';
@@ -1769,7 +1786,7 @@ export function showVerifyPinModal() {
       });
 
       inp.addEventListener('input', (e) => {
-        const val = e.target.value.replace(/[^0-9]/g, '');
+        const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 1);
         inp.value = val;
         
         if (val) {
@@ -1789,6 +1806,31 @@ export function showVerifyPinModal() {
           }
         }
         checkSubmitState();
+      });
+
+      inp.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const data = (e.clipboardData || window.clipboardData).getData('text');
+        const digits = data.replace(/[^0-9]/g, '').slice(0, 6);
+        if (digits.length > 0) {
+          let fillIndex = idx;
+          for (let i = 0; i < digits.length && fillIndex < 6; i++) {
+            inputs[fillIndex].value = digits[i];
+            fillIndex++;
+          }
+          const nextFocus = Math.min(fillIndex, 5);
+          inputs[nextFocus].focus();
+          checkSubmitState();
+          
+          if (inputs.every(input => input.value !== '')) {
+            submitBtn.style.opacity = '1';
+            submitBtn.style.pointerEvents = 'auto';
+            submitBtn.focus();
+            setTimeout(() => {
+              submitBtn.click();
+            }, 100);
+          }
+        }
       });
 
       inp.addEventListener('keydown', (e) => {
@@ -2419,44 +2461,59 @@ export function showSchedulePaymentModal(contact, color = '#ff7a00') {
 
   modal.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-      <div style="display:flex; align-items:center; gap:10px;">
-        <div style="width:38px;height:38px;border-radius:50%;background:${color}22;border:1.5px solid ${color};color:${color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;">${initial}</div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:40px;height:40px;border-radius:50%;background:${color}15;border:2px solid ${color};color:${color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;box-shadow: 0 4px 12px ${color}22;">${initial}</div>
         <div>
-          <div style="font-weight:700;color:#fff;font-size:15px;">Schedule Payment</div>
-          <div style="font-size:11px;color:var(--muted);">${escapeHtml(contact.name || contact.email)}</div>
+          <div style="font-weight:800;color:#fff;font-size:16px;letter-spacing:-0.2px;">Schedule Payment</div>
+          <div style="font-size:12px;color:var(--muted);">${escapeHtml(contact.name || contact.email)}</div>
         </div>
       </div>
-      <button id="sch-close" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;">&times;</button>
+      <button id="sch-close" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:50%;color:var(--muted);width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:all 0.2s;">&times;</button>
     </div>
 
     <!-- Type toggle -->
-    <div class="sch-type-row">
+    <div class="sch-type-row" style="margin-bottom: 20px;">
       <button class="sch-type-btn active" id="sch-type-once">⏰ One-Time</button>
       <button class="sch-type-btn" id="sch-type-weekly">🔁 Weekly</button>
       <button class="sch-type-btn" id="sch-type-monthly">📅 Monthly</button>
     </div>
 
-    <!-- Amount + Note -->
-    <div style="display:flex;gap:10px;margin:16px 0 10px;">
-      <input type="number" id="sch-amount" class="input" placeholder="Amount (₹)" style="flex:1;margin:0;" min="1" />
-      <input type="text"   id="sch-note"   class="input" placeholder="Note (optional)" style="flex:1.5;margin:0;" />
+    <!-- Amount Input Wrap with Indian Rupee symbol prefix -->
+    <div style="margin-bottom: 16px;">
+      <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px;font-weight:700;letter-spacing:0.5px;">AMOUNT</label>
+      <div style="position:relative; display:flex; align-items:center;">
+        <span style="position:absolute; left:14px; color:#fff; font-weight:800; font-size:16px; pointer-events:none;">₹</span>
+        <input type="number" id="sch-amount" class="input" placeholder="0.00" style="margin:0;padding-left:32px;width:100%;font-size:16px;font-weight:800;" min="1" />
+      </div>
+    </div>
+
+    <!-- Note Input Wrap -->
+    <div style="margin-bottom: 16px;">
+      <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px;font-weight:700;letter-spacing:0.5px;">NOTE (OPTIONAL)</label>
+      <div style="position:relative; display:flex; align-items:center;">
+        <span style="position:absolute; left:14px; color:var(--muted); pointer-events:none; display:flex; align-items:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+        </span>
+        <input type="text" id="sch-note" class="input" placeholder="e.g. Rent, Electricity" style="margin:0;padding-left:36px;width:100%;" />
+      </div>
     </div>
 
     <!-- Date/time picker (for one-time) -->
-    <div id="sch-date-wrap" style="margin-bottom:10px;">
-      <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">SCHEDULE DATE & TIME</label>
-      <input type="datetime-local" id="sch-datetime" class="input" style="margin:0;width:100%;" min="${minDate}" />
+    <div id="sch-date-wrap" style="margin-bottom: 20px;">
+      <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px;font-weight:700;letter-spacing:0.5px;">SCHEDULE DATE & TIME</label>
+      <input type="datetime-local" id="sch-datetime" class="input" style="margin:0;width:100%;font-weight:700;" min="${minDate}" />
     </div>
 
     <!-- Day picker (for recurring) -->
-    <div id="sch-day-wrap" style="display:none;margin-bottom:10px;">
-      <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">DAY OF WEEK / MONTH</label>
+    <div id="sch-day-wrap" style="display:none; margin-bottom: 20px;">
+      <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px;font-weight:700;letter-spacing:0.5px;">DAY OF WEEK / MONTH</label>
       <input type="number" id="sch-day" class="input" placeholder="e.g. 1 = Monday / 1st of month" style="margin:0;width:100%;" min="1" max="31" />
     </div>
 
-    <div id="sch-error" style="color:#ff5c6c;font-size:12px;min-height:16px;margin-bottom:8px;"></div>
+    <div id="sch-error" style="color:#ff5c6c;font-size:12px;min-height:16px;margin-bottom:12px;font-weight:600;"></div>
 
-    <button class="btn primary" id="sch-submit" style="width:100%;padding:13px;font-weight:700;font-size:14px;">
+    <button class="btn primary" id="sch-submit" style="width:100%;padding:14px;font-weight:800;font-size:14px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow: 0 8px 24px rgba(255, 122, 0, 0.25);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
       <span>Schedule Payment</span>
     </button>
   `;

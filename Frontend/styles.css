@@ -2206,6 +2206,15 @@ input[type="file"].input::file-selector-button{
     flex-direction: column;
     gap: 20px;
     margin-top: 20px;
+    padding-bottom: 110px !important; /* Ensure scrolled content clears the mobile floating bottom navigation bar */
+  }
+}
+
+/* Desktop notifications container on top-right below topbar */
+@media (min-width: 761px) {
+  .toast-container {
+    bottom: auto !important;
+    top: 76px !important;
   }
 }
 
