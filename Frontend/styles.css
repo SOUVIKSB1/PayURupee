@@ -254,6 +254,16 @@ body{
   .grid.cols-3{grid-template-columns: repeat(2, 1fr)}
 }
 @media (max-width:760px){
+  .topbar {
+    position: relative;
+  }
+  .brand {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    z-index: 5;
+  }
   body {
     padding-bottom: calc(96px + env(safe-area-inset-bottom, 12px)); /* Ensure content is clear of bottom navigation */
     overflow-x: hidden;
