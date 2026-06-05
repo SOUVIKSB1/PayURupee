@@ -1499,7 +1499,7 @@ input[type="file"].input::file-selector-button{
 }
 
 @media (max-width: 760px) {
-  .dashboard-grid {
+  .dashboard-grid, .dashboard-hero-row {
     grid-template-columns: 1fr;
     gap: 20px;
   }
@@ -1508,8 +1508,8 @@ input[type="file"].input::file-selector-button{
 /* Split Hero Cards row */
 .dashboard-hero-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px;
   width: 100%;
 }
 
