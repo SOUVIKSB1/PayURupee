@@ -69,6 +69,8 @@ const getUnreadMessages = async (req, res) => {
         senderEmail: msg.sender,
         count: 0,
         latestText: msg.text,
+        isRequest: msg.isRequest,
+        latestAmount: msg.amount,
         latestTimestamp: msg.timestamp
       };
     }

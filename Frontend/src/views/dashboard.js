@@ -301,6 +301,7 @@ export async function renderDashboard() {
     // Shared unread state — hoisted here so the poll interval can access it
     let lastUnreadSenders = new Set();
     let updateUnreadDots = null; // will be assigned when contacts render
+    let contactNameMap = {};     // email -> display name, filled when contacts render
 
     // Periodically poll balance state to capture live incoming peer transactions
     const pollInterval = setInterval(async () => {
@@ -338,10 +339,17 @@ export async function renderDashboard() {
         // Fire notification only for genuinely NEW senders not seen in last poll
         unreadList.forEach(u => {
           if (!lastUnreadSenders.has(u.senderEmail)) {
-            // Find display name from contacts if available
-            const contactEl = document.querySelector(`[data-contact-email="${CSS.escape(u.senderEmail)}"]`);
-            const name = contactEl ? contactEl.querySelector('span:last-child')?.textContent?.trim() : u.senderEmail;
-            addNotification(`💬 New message from ${name}: "${u.latestText.substring(0, 40)}${u.latestText.length > 40 ? '…' : ''}"`, 'info');
+            // Resolve display name from the pre-built map (not fragile DOM querying)
+            const name = contactNameMap[u.senderEmail] || u.senderEmail;
+            if (u.isRequest) {
+              // Money request notification
+              const amt = u.latestAmount ? `₹${Number(u.latestAmount).toFixed(2)}` : '';
+              addNotification(`💸 Money Request from ${name}${amt ? ': ' + amt : ''}`, 'info');
+            } else {
+              // Regular chat message notification
+              const preview = u.latestText.substring(0, 45) + (u.latestText.length > 45 ? '…' : '');
+              addNotification(`💬 New message from ${name}: "${preview}"`, 'info');
+            }
           }
         });
 
@@ -402,6 +410,7 @@ export async function renderDashboard() {
       
       // Map from contact email -> item DOM element for dot updates
       const contactItemMap = {};
+      // contactNameMap is outer-scoped (let), fill it here
 
       contacts.forEach((contact, idx) => {
         const item = document.createElement('div');
@@ -458,6 +467,10 @@ export async function renderDashboard() {
         
         contactsGrid.appendChild(item);
         contactItemMap[contact.email] = item;
+        // Store display name for use in notifications (no DOM querying needed)
+        contactNameMap[contact.email] = contact.name
+          ? contact.name.split(' ')[0]
+          : contact.email.split('@')[0];
       });
 
       // Helper: refresh unread dots on contact avatars (assigned to outer-scope var)
