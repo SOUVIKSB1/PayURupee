@@ -17,6 +17,7 @@ const register = async (req, res) => {
   const user = new User({ name, email, password: hashed, role: 'user', balance: 0 });
   await user.save();
 
+  const token = signToken(user);
   res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role, balance: user.balance, hasUpiPin: !!user.upiPin } });
 };
 
