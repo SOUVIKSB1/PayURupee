@@ -548,7 +548,7 @@ input[type="file"].input::file-selector-button{
 
 /* Modal preview for QR decoded data — glassy modern style */
 .modal-overlay{
-  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:60;padding:28px;
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100005;padding:28px;
   background: linear-gradient(180deg, rgba(2,6,23,0.55), rgba(2,6,23,0.45));
   backdrop-filter: blur(6px) saturate(120%);
   -webkit-backdrop-filter: blur(6px) saturate(120%);
@@ -1846,7 +1846,34 @@ input[type="file"].input::file-selector-button{
   box-sizing: border-box;
 }
 
-/* Responsive bottom sheet overlays and modals (Set PIN, Verify PIN, Change PIN, Edit Profile) */
+/* Responsive bottom sheet overlays and modals (Set PIN, Verify PIN, Change PIN, Edit Profile, Split Bill, Schedule Payment) */
+.bottom-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100005 !important; /* Always cover mobile bottom navigation (99999) */
+  padding: 24px;
+  box-sizing: border-box;
+  animation: overlayFade 0.22s ease both;
+}
+
+.bottom-sheet-modal {
+  background: #0d0e12;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 24px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+  box-sizing: border-box;
+  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 @media (max-width: 760px), (max-height: 600px) {
   /* Prevent iOS automatic input font zoom-in layout shifts */
   input, select, textarea, .input {
@@ -1854,15 +1881,17 @@ input[type="file"].input::file-selector-button{
   }
 
   .bottom-sheet-overlay {
-    align-items: center !important;
-    padding: 16px !important;
-    box-sizing: border-box !important;
+    align-items: flex-end !important; /* Pop up from bottom as a card sheet on mobile */
+    padding: 0 !important;
   }
 
   .bottom-sheet-modal {
-    border-radius: 24px !important;
+    border-radius: 24px 24px 0 0 !important;
     max-height: 85vh !important;
-    padding: 24px 20px !important;
+    padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 12px)) !important;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    margin: 0 !important;
+    max-width: 100% !important;
   }
 
   /* Compact the spacing slightly when keyboard reduces visible height */
