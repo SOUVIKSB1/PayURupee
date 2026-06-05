@@ -1246,7 +1246,7 @@ export function showSetPinModal() {
     overlay.style.cssText = `
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(4, 4, 6, 0.9); display: flex; align-items: flex-end;
-      justify-content: center; z-index: 99999;
+      justify-content: center; z-index: 999999;
     `;
 
     // Create modal container
@@ -1444,7 +1444,7 @@ export function showVerifyPinModal() {
     overlay.style.cssText = `
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(4, 4, 6, 0.85); display: flex; align-items: flex-end;
-      justify-content: center; z-index: 99999;
+      justify-content: center; z-index: 999999;
     `;
 
     // Create modal container
@@ -1586,11 +1586,39 @@ export function showVerifyPinModal() {
       const pinVal = inputs.map(inp => inp.value).join('');
       if (pinVal.length !== 6) return;
 
-      modal.style.transform = 'translateY(100%)';
+      // Disable cancel / buttons during verification
+      if (cancelBtn) cancelBtn.disabled = true;
+      if (cancelTopBtn) cancelTopBtn.disabled = true;
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = '0.5';
+      submitBtn.querySelector('span').textContent = 'Verifying...';
+
+      // Insert verification progress overlay inside the modal card
+      const progressOverlay = document.createElement('div');
+      progressOverlay.style.cssText = `
+        position: absolute; inset: 0; background: #0d0e12;
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; border-radius: 24px 24px 0 0;
+        z-index: 10; padding: 24px; text-align: center;
+      `;
+      progressOverlay.innerHTML = `
+        <div class="spinner" style="width: 48px; height: 48px; border: 4px solid rgba(255,122,0,0.15); border-top-color: #ff7a00; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+        <h4 style="margin: 0 0 8px; color: #fff; font-size: 18px; font-weight: 700;">Verification in Progress</h4>
+        <p style="margin: 0; color: var(--muted); font-size: 13px;">Authorizing payment session securely...</p>
+        <style>
+          @keyframes spin { to { transform: rotate(360deg); } }
+        </style>
+      `;
+      modal.appendChild(progressOverlay);
+
+      // Short delay to let the user see the premium authorization transition, then resolve and slide down
       setTimeout(() => {
-        overlay.remove();
-        resolve(pinVal);
-      }, 300);
+        modal.style.transform = 'translateY(100%)';
+        setTimeout(() => {
+          overlay.remove();
+          resolve(pinVal);
+        }, 300);
+      }, 1200);
     });
   });
 }
@@ -1603,7 +1631,7 @@ export function showChangePinModal() {
     overlay.style.cssText = `
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(4, 4, 6, 0.85); display: flex; align-items: flex-end;
-      justify-content: center; z-index: 99999;
+      justify-content: center; z-index: 999999;
     `;
 
     // Create modal container
