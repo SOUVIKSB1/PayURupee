@@ -35,30 +35,10 @@ export async function apiFetch(path, options = {}) {
   // Include credentials for CORS requests if needed
   const opts = { credentials: 'same-origin', ...options, headers };
   
+  let res;
   try {
     // Fire the network request to the backend
-    const res = await fetch(API_BASE + path, opts);
-    
-    // Intercept 401 (Unauthorized/Expired Token) errors and log out the user
-    if (res.status === 401) {
-      logout();
-      throw new Error('Unauthorized — please login again');
-    }
-    
-    // Parse response output
-    const text = await res.text();
-    try {
-      // If it's valid JSON, check for HTTP error statuses and return parsed object
-      const json = text ? JSON.parse(text) : {};
-      if (!res.ok) {
-        throw new Error(json.message || (json.error && json.error.message) || `Request failed with status ${res.status}: ${text}`);
-      }
-      return json;
-    } catch (err) {
-      // Fallback for non-JSON response data
-      if (!res.ok) throw new Error(`Request failed with status ${res.status}: ${text || 'Empty response'}`);
-      return text;
-    }
+    res = await fetch(API_BASE + path, opts);
   } catch (err) {
     // Log network connection problems or timeouts
     console.error('API Fetch Error:', {
@@ -68,5 +48,26 @@ export async function apiFetch(path, options = {}) {
       timestamp: new Date().toISOString()
     });
     throw new Error(`Connection failed: ${err.message} (API: ${API_BASE})`);
+  }
+  
+  // Intercept 401 (Unauthorized/Expired Token) errors and log out the user
+  if (res.status === 401) {
+    logout();
+    throw new Error('Unauthorized — please login again');
+  }
+  
+  // Parse response output
+  const text = await res.text();
+  try {
+    // If it's valid JSON, check for HTTP error statuses and return parsed object
+    const json = text ? JSON.parse(text) : {};
+    if (!res.ok) {
+      throw new Error(json.message || (json.error && json.error.message) || `Request failed with status ${res.status}`);
+    }
+    return json;
+  } catch (err) {
+    // Fallback for non-JSON response data
+    if (!res.ok) throw new Error(err.message || `Request failed with status ${res.status}`);
+    return text;
   }
 }
