@@ -93,30 +93,41 @@ export function authGuard(renderFn, targetRoute = '') {
     import('./views/login.js').then(m => m.renderLogin());
     return;
   }
-  
-  // Re-verify auth status by retrieving the profile metadata from the Backend
+
+  // Optimize page loading: render immediately if user metadata exists in local storage
+  if (store.user) {
+    if (store.user.role === 'admin' && targetRoute !== 'admin') {
+      import('./views/admin.js').then(m => m.renderAdmin(window.__currentAdminTab || 'users'));
+    } else {
+      renderFn();
+    }
+  }
+
+  // Refresh profile details from backend in the background to keep balance/status synced
   apiFetch('/users/me').then(json => {
-    // Save updated credentials to store & localStorage
+    const isFirstLoad = !store.user;
     store.user = json.user;
     localStorage.setItem('ewallet_user', JSON.stringify(store.user));
     
-    // Notify Topbar components to update profile view
     if (window.__onAuthChange) window.__onAuthChange();
     
-    // Admin routing lock: force admins to stay on the admin panel
-    if (store.user && store.user.role === 'admin' && targetRoute !== 'admin') {
-      import('./views/admin.js').then(m => m.renderAdmin(window.__currentAdminTab || 'users'));
-    } else {
-      // Proceed to rendering the authenticated page layout
-      renderFn();
+    // If we skipped initial rendering due to first time login (no local cache), render it now
+    if (isFirstLoad) {
+      if (store.user.role === 'admin' && targetRoute !== 'admin') {
+        import('./views/admin.js').then(m => m.renderAdmin(window.__currentAdminTab || 'users'));
+      } else {
+        renderFn();
+      }
     }
   }).catch(err => {
-    console.warn('profile fetch failed', err);
-    if (err.message && err.message.includes('maintenance')) {
-      import('./views/maintenance.js').then(m => m.renderMaintenance());
-    } else {
-      logout();
-      import('./views/login.js').then(m => m.renderLogin('Session expired — please login again'));
+    console.warn('profile background verification failed', err);
+    if (!store.user) {
+      if (err.message && err.message.includes('maintenance')) {
+        import('./views/maintenance.js').then(m => m.renderMaintenance());
+      } else {
+        logout();
+        import('./views/login.js').then(m => m.renderLogin('Session expired — please login again'));
+      }
     }
   });
 }

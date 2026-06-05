@@ -501,14 +501,14 @@ body{
 /* micro animations */
 /* macOS-like page zoom transitions expanding from the clicked button origin */
 .fade-in {
-  animation: macZoomIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: macZoomIn 0.16s ease-out both;
   transform-origin: var(--zoom-origin-x, 50%) var(--zoom-origin-y, 50%);
 }
 
 @keyframes macZoomIn {
   from {
     opacity: 0;
-    transform: scale(0.12);
+    transform: scale(0.96);
   }
   to {
     opacity: 1;
