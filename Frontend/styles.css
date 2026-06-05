@@ -2574,16 +2574,15 @@ input[type="file"].input::file-selector-button{
   justify-content: center;
   gap: 8px;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s ease;
   box-shadow: 0 4px 15px rgba(255, 122, 0, 0.25);
-  will-change: transform;
 }
 .hero-action-btn-primary:hover {
-  transform: scale(1.015);
+  background: linear-gradient(135deg, #ff9022 0%, #ff6a11 100%);
   box-shadow: 0 8px 24px rgba(255, 122, 0, 0.45);
 }
 .hero-action-btn-primary:active {
-  transform: scale(0.99);
+  opacity: 0.85;
 }
 
 .hero-action-btn-secondary {
@@ -2600,16 +2599,14 @@ input[type="file"].input::file-selector-button{
   justify-content: center;
   gap: 8px;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s ease;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
-  will-change: transform;
 }
 .hero-action-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 122, 0, 0.35); /* Soft matching orange border glow on hover */
-  transform: scale(1.015);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 122, 0, 0.45) !important; /* Soft matching orange border glow on hover */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 10px rgba(255, 122, 0, 0.1);
 }
 .hero-action-btn-secondary:active {
-  transform: scale(0.99);
+  opacity: 0.85;
 }
