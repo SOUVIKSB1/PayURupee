@@ -1846,3 +1846,45 @@ input[type="file"].input::file-selector-button{
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   box-sizing: border-box;
 }
+
+/* Responsive bottom sheet overlays and modals (Set PIN, Verify PIN, Change PIN, Edit Profile) */
+@media (max-width: 760px), (max-height: 600px) {
+  /* Prevent iOS automatic input font zoom-in layout shifts */
+  input, select, textarea, .input {
+    font-size: 16px !important;
+  }
+
+  .bottom-sheet-overlay {
+    align-items: center !important;
+    padding: 16px !important;
+    box-sizing: border-box !important;
+  }
+
+  .bottom-sheet-modal {
+    border-radius: 24px !important;
+    max-height: 85vh !important;
+    padding: 24px 20px !important;
+  }
+
+  /* Compact the spacing slightly when keyboard reduces visible height */
+  .bottom-sheet-modal h3 {
+    margin-bottom: 4px !important;
+  }
+  .bottom-sheet-modal p {
+    margin-bottom: 16px !important;
+  }
+
+  /* Make 6-digit PIN square boxes slightly smaller to fit 320px screens perfectly without wrapping */
+  .bottom-sheet-modal .pin-digit-input,
+  .bottom-sheet-modal .pin-digit-input-verify,
+  .bottom-sheet-modal .change-pin-digit {
+    width: 38px !important;
+    height: 44px !important;
+    font-size: 20px !important;
+  }
+  
+  .bottom-sheet-modal div[style*="gap: 8px"] {
+    gap: 6px !important;
+  }
+}
+

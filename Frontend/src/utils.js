@@ -1263,6 +1263,7 @@ export function showSetPinModal() {
     // Create overlay
     const overlay = document.createElement('div');
     overlay.id = 'set-pin-overlay';
+    overlay.className = 'bottom-sheet-overlay';
     overlay.style.cssText = `
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(4, 4, 6, 0.9); display: flex; align-items: flex-end;
@@ -1271,6 +1272,7 @@ export function showSetPinModal() {
 
     // Create modal container
     const modal = document.createElement('div');
+    modal.className = 'bottom-sheet-modal set-pin-modal';
     modal.style.cssText = `
       background: #0d0e12; border-top: 3px solid #ff7a00;
       width: 100%; max-width: 480px; border-radius: 24px 24px 0 0;
@@ -1462,6 +1464,7 @@ export function showVerifyPinModal() {
     // Create overlay
     const overlay = document.createElement('div');
     overlay.id = 'verify-pin-overlay';
+    overlay.className = 'bottom-sheet-overlay';
     overlay.style.cssText = `
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(4, 4, 6, 0.85); display: flex; align-items: flex-end;
@@ -1470,6 +1473,7 @@ export function showVerifyPinModal() {
 
     // Create modal container
     const modal = document.createElement('div');
+    modal.className = 'bottom-sheet-modal verify-pin-modal';
     modal.style.cssText = `
       background: #0d0e12; border-top: 3px solid #ff7a00;
       width: 100%; max-width: 480px; border-radius: 24px 24px 0 0;
@@ -1649,6 +1653,7 @@ export function showChangePinModal() {
     // Create overlay
     const overlay = document.createElement('div');
     overlay.id = 'change-pin-overlay';
+    overlay.className = 'bottom-sheet-overlay';
     overlay.style.cssText = `
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(4, 4, 6, 0.85); display: flex; align-items: flex-end;
@@ -1657,6 +1662,7 @@ export function showChangePinModal() {
 
     // Create modal container
     const modal = document.createElement('div');
+    modal.className = 'bottom-sheet-modal change-pin-modal';
     modal.style.cssText = `
       background: #0d0e12; border-top: 3px solid #ff7a00;
       width: 100%; max-width: 480px; border-radius: 24px 24px 0 0;
@@ -1899,6 +1905,7 @@ export function showEditProfileModal() {
     // Create overlay
     const overlay = document.createElement('div');
     overlay.id = 'edit-profile-overlay';
+    overlay.className = 'bottom-sheet-overlay';
     overlay.style.cssText = `
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(4, 4, 6, 0.85); display: flex; align-items: flex-end;
@@ -1907,6 +1914,7 @@ export function showEditProfileModal() {
 
     // Create modal container
     const modal = document.createElement('div');
+    modal.className = 'bottom-sheet-modal edit-profile-modal';
     modal.style.cssText = `
       background: #0d0e12; border-top: 3px solid #00a2ff;
       width: 100%; max-width: 480px; border-radius: 24px 24px 0 0;
