@@ -216,6 +216,7 @@ body{
   -webkit-backdrop-filter: blur(var(--glass-blur));
   position:relative;
   overflow:visible;
+  will-change: transform;
 }
 
 /* gradient outline (pseudo element) */
@@ -502,6 +503,9 @@ body{
 .fade-in {
   animation: macZoomIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
   transform-origin: var(--zoom-origin-x, 50%) var(--zoom-origin-y, 50%);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
 }
 
 @keyframes macZoomIn {
@@ -1422,6 +1426,7 @@ input[type="file"].input::file-selector-button{
   gap: 20px;
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
+  will-change: transform;
 }
 
 .paytm-hero-header {

@@ -365,12 +365,17 @@ export function renderTopbar() {
     // If logged in, show username and profile role context
     if (userInfo) userInfo.textContent = `${store.user.name} (${store.user.role})`;
     
-    // Dynamically render desktop navbar and mobile bottom nav based on role
-    if (mainNav) {
-      mainNav.innerHTML = store.user.role === 'admin' ? ADMIN_DESKTOP_NAV : USER_DESKTOP_NAV;
-    }
-    if (mobileBottomNav) {
-      mobileBottomNav.innerHTML = store.user.role === 'admin' ? ADMIN_MOBILE_NAV : USER_MOBILE_NAV;
+    // Dynamically render desktop navbar and mobile bottom nav based on role only if role changes
+    const currentRenderedRole = mainNav ? mainNav.getAttribute('data-rendered-role') : null;
+    if (currentRenderedRole !== store.user.role) {
+      if (mainNav) {
+        mainNav.innerHTML = store.user.role === 'admin' ? ADMIN_DESKTOP_NAV : USER_DESKTOP_NAV;
+        mainNav.setAttribute('data-rendered-role', store.user.role);
+      }
+      if (mobileBottomNav) {
+        mobileBottomNav.innerHTML = store.user.role === 'admin' ? ADMIN_MOBILE_NAV : USER_MOBILE_NAV;
+        mobileBottomNav.setAttribute('data-rendered-role', store.user.role);
+      }
     }
     
     // Display initials in user avatar container (both desktop and mobile)
@@ -564,7 +569,12 @@ if (!CSS.supports('(animation-timeline: view()) and (animation-range: entry)')) 
 
   // Observe dynamically loaded router views / components
   const pageMutationObserver = new MutationObserver(initRevealOnElements);
-  pageMutationObserver.observe(document.body, { childList: true, subtree: true });
+  const mainEl = document.getElementById('main');
+  if (mainEl) {
+    pageMutationObserver.observe(mainEl, { childList: true, subtree: true });
+  } else {
+    pageMutationObserver.observe(document.body, { childList: true, subtree: true });
+  }
 
   // Initial check
   if (document.readyState === 'loading') {
