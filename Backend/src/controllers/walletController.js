@@ -229,10 +229,10 @@ const forceDeposit = async (req, res) => {
 
   const amt = Number(amount);
   // config: per-deposit max and daily total limit (both in same currency units as amount)
-  const MAX_FORCE_DEPOSIT = Number(process.env.FORCE_DEPOSIT_MAX_AMOUNT || '10000');
-  const DAILY_FORCE_LIMIT = Number(process.env.FORCE_DEPOSIT_DAILY_LIMIT || '10000');
+  const MAX_FORCE_DEPOSIT = Number(process.env.FORCE_DEPOSIT_MAX_AMOUNT || '5000');
+  const DAILY_FORCE_LIMIT = Number(process.env.FORCE_DEPOSIT_DAILY_LIMIT || '5000');
   // Admins may bypass per-deposit and daily limits for demo/testing
-  if (amt > MAX_FORCE_DEPOSIT && req.user.role !== 'admin') return res.status(400).json({ message: `Amount exceeds maximum allowed per deposit (${MAX_FORCE_DEPOSIT})` });
+  if (amt > MAX_FORCE_DEPOSIT && req.user.role !== 'admin') return res.status(400).json({ message: `Amount exceeds maximum allowed per deposit (₹${MAX_FORCE_DEPOSIT})` });
 
   // compute today's total forced deposits for this user
   const dayStart = new Date(); dayStart.setHours(0,0,0,0);
@@ -242,7 +242,9 @@ const forceDeposit = async (req, res) => {
   ]);
   const todayTotal = (agg && agg[0] && agg[0].total) ? agg[0].total : 0;
   // Allow admins to bypass daily limit for testing purposes
-  if (req.user.role !== 'admin' && (todayTotal + amt) > DAILY_FORCE_LIMIT) return res.status(429).json({ message: `Daily demo deposit limit exceeded (${DAILY_FORCE_LIMIT})` });
+  if (req.user.role !== 'admin' && (todayTotal + amt) > DAILY_FORCE_LIMIT) {
+    return res.status(400).json({ message: `Daily demo top-up limit exceeded. You can only top up to ₹${DAILY_FORCE_LIMIT} per day in demo mode.` });
+  }
 
   const u = await User.findById(user._id);
   u.balance = (u.balance || 0) + amt;
