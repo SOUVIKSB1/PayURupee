@@ -253,6 +253,17 @@ body{
   .grid.cols-3{grid-template-columns: repeat(2, 1fr)}
 }
 @media (max-width:760px){
+  body {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 12px)); /* Ensure content is clear of bottom navigation */
+    overflow-x: hidden;
+  }
+  .container {
+    padding: 0 14px;
+    margin: 14px auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
   .grid.cols-3,.grid.cols-2{grid-template-columns:1fr}
 
   /* Toggle button for hamburger */
@@ -994,7 +1005,8 @@ input[type="file"].input::file-selector-button{
 
 @media (max-width: 760px) {
   body {
-    padding-bottom: calc(84px + env(safe-area-inset-bottom, 12px)); /* Ensure content is clear of bottom navigation */
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 12px)) !important;
+    overflow-x: hidden;
   }
 
   .topbar {
