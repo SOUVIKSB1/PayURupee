@@ -976,8 +976,10 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
   overlay.appendChild(drawer);
   document.body.appendChild(overlay);
 
+  const isMobileScreen = window.innerWidth <= 850;
+
   const msgInput = drawer.querySelector('#drawer-msg-input');
-  if (msgInput) msgInput.focus();
+  if (msgInput && !isMobileScreen) msgInput.focus();
 
   let refreshInterval = setInterval(() => {
     if (document.body.contains(overlay)) {
@@ -1007,7 +1009,7 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
   btnSend.addEventListener('click', () => {
     reqPanel.style.display = 'none';
     sendPanel.style.display = sendPanel.style.display === 'none' ? 'block' : 'none';
-    if (sendPanel.style.display === 'block') {
+    if (sendPanel.style.display === 'block' && !isMobileScreen) {
       drawer.querySelector('#drawer-send-amount').focus();
     }
   });
@@ -1015,7 +1017,7 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
   btnRequest.addEventListener('click', () => {
     sendPanel.style.display = 'none';
     reqPanel.style.display = reqPanel.style.display === 'none' ? 'block' : 'none';
-    if (reqPanel.style.display === 'block') {
+    if (reqPanel.style.display === 'block' && !isMobileScreen) {
       drawer.querySelector('#drawer-req-amount').focus();
     }
   });
@@ -1234,7 +1236,9 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
               amtInput.value = msg.amount || '';
               noteInput.value = `Paying request: ${msg.text}`;
               // Focus
-              amtInput.focus();
+              if (!isMobileScreen) {
+                amtInput.focus();
+              }
             });
           }
           
