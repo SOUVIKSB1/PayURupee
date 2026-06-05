@@ -1562,4 +1562,233 @@ export function showVerifyPinModal() {
   });
 }
 
+export function showChangePinModal() {
+  return new Promise((resolve, reject) => {
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'change-pin-overlay';
+    overlay.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(4, 4, 6, 0.85); display: flex; align-items: flex-end;
+      justify-content: center; z-index: 99999;
+    `;
+
+    // Create modal container
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      background: #0d0e12; border-top: 3px solid #ff7a00;
+      width: 100%; max-width: 480px; border-radius: 24px 24px 0 0;
+      padding: 32px 24px; box-sizing: border-box;
+      box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+      transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      position: relative;
+    `;
+
+    // Contents
+    modal.innerHTML = `
+      <button id="btn-change-pin-cancel-top" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 4px;">✕</button>
+      <div style="font-size: 40px; margin-bottom: 16px;">🔐</div>
+      <h3 id="change-pin-title" style="margin: 0 0 8px; color: #fff; font-size: 20px; font-weight: 800;">Change UPI PIN</h3>
+      <p id="change-pin-subtitle" style="margin: 0 0 24px; color: var(--muted); font-size: 13.5px;">Enter your current 6-digit UPI PIN</p>
+      
+      <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 24px;">
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="change-pin-digit" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="change-pin-digit" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="change-pin-digit" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="change-pin-digit" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="change-pin-digit" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="change-pin-digit" style="width: 46px; height: 52px; text-align: center; font-size: 24px; font-weight: 800; border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.03); color: #fff; outline: none; transition: all 0.2s;" disabled />
+      </div>
+
+      <div id="change-pin-error" style="color: #ff5c6c; font-size: 13px; font-weight: 600; min-height: 18px; margin-bottom: 16px;"></div>
+
+      <div style="display: flex; gap: 12px; width: 100%;">
+        <button id="btn-change-pin-cancel" class="cancel-btn" style="flex: 1; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; font-weight: 700; cursor: pointer;">Cancel</button>
+        <button id="btn-change-pin-submit" class="pay-now-btn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; opacity: 0.5; pointer-events: none;">
+          <span>Continue</span>
+        </button>
+      </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Trigger slide up
+    setTimeout(() => {
+      modal.style.transform = 'translateY(0)';
+    }, 10);
+
+    const titleEl = modal.querySelector('#change-pin-title');
+    const subtitleEl = modal.querySelector('#change-pin-subtitle');
+    const errorEl = modal.querySelector('#change-pin-error');
+    const submitBtn = modal.querySelector('#btn-change-pin-submit');
+    const cancelBtn = modal.querySelector('#btn-change-pin-cancel');
+    const cancelTopBtn = modal.querySelector('#btn-change-pin-cancel-top');
+    const inputs = Array.from(modal.querySelectorAll('.change-pin-digit'));
+
+    let step = 1; // 1: enter current, 2: enter new, 3: confirm new
+    let currentPinVal = '';
+    let newPinVal = '';
+
+    const handleDismiss = () => {
+      modal.style.transform = 'translateY(100%)';
+      setTimeout(() => {
+        overlay.remove();
+        reject(new Error('User cancelled PIN change'));
+      }, 300);
+    };
+
+    cancelBtn.addEventListener('click', handleDismiss);
+    cancelTopBtn.addEventListener('click', handleDismiss);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) handleDismiss();
+    });
+
+    const focusInput = (index) => {
+      inputs.forEach((inp, idx) => {
+        inp.disabled = idx !== index;
+      });
+      if (inputs[index]) {
+        inputs[index].focus();
+      }
+    };
+
+    inputs.forEach((inp, idx) => {
+      inp.addEventListener('focus', () => {
+        inp.style.borderColor = '#ff7a00';
+        inp.style.boxShadow = '0 0 10px rgba(255, 122, 0, 0.3)';
+        inp.style.background = 'rgba(255, 122, 0, 0.05)';
+      });
+      inp.addEventListener('blur', () => {
+        inp.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+        inp.style.boxShadow = 'none';
+        inp.style.background = 'rgba(255, 255, 255, 0.03)';
+      });
+
+      inp.addEventListener('input', (e) => {
+        const val = e.target.value.replace(/[^0-9]/g, '');
+        inp.value = val;
+        
+        if (val) {
+          if (idx < 5) {
+            focusInput(idx + 1);
+          } else {
+            inp.blur();
+            submitBtn.style.opacity = '1';
+            submitBtn.style.pointerEvents = 'auto';
+            submitBtn.focus();
+          }
+        }
+        checkSubmitState();
+      });
+
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace') {
+          if (!inp.value && idx > 0) {
+            inputs[idx - 1].value = '';
+            focusInput(idx - 1);
+          } else {
+            inp.value = '';
+          }
+          checkSubmitState();
+        }
+      });
+    });
+
+    const checkSubmitState = () => {
+      const allFilled = inputs.every(inp => inp.value !== '');
+      if (allFilled) {
+        submitBtn.style.opacity = '1';
+        submitBtn.style.pointerEvents = 'auto';
+      } else {
+        submitBtn.style.opacity = '0.5';
+        submitBtn.style.pointerEvents = 'none';
+      }
+    };
+
+    focusInput(0);
+
+    submitBtn.addEventListener('click', async () => {
+      const pinVal = inputs.map(inp => inp.value).join('');
+      if (pinVal.length !== 6) return;
+
+      errorEl.textContent = '';
+
+      if (step === 1) {
+        currentPinVal = pinVal;
+        step = 2;
+        inputs.forEach(inp => inp.value = '');
+        titleEl.textContent = 'Enter New PIN';
+        subtitleEl.textContent = 'Choose a new 6-digit UPI PIN';
+        submitBtn.querySelector('span').textContent = 'Continue';
+        checkSubmitState();
+        focusInput(0);
+      } else if (step === 2) {
+        newPinVal = pinVal;
+        step = 3;
+        inputs.forEach(inp => inp.value = '');
+        titleEl.textContent = 'Confirm New PIN';
+        subtitleEl.textContent = 'Re-enter your new 6-digit PIN to confirm';
+        submitBtn.querySelector('span').textContent = 'Confirm & Change';
+        checkSubmitState();
+        focusInput(0);
+      } else {
+        if (pinVal !== newPinVal) {
+          errorEl.textContent = 'New PINs do not match. Please start again.';
+          step = 2;
+          newPinVal = '';
+          inputs.forEach(inp => inp.value = '');
+          titleEl.textContent = 'Enter New PIN';
+          subtitleEl.textContent = 'Choose a new 6-digit UPI PIN';
+          submitBtn.querySelector('span').textContent = 'Continue';
+          checkSubmitState();
+          focusInput(0);
+          return;
+        }
+
+        // Call change-pin API
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.5';
+        submitBtn.querySelector('span').textContent = 'Updating...';
+        
+        try {
+          const res = await apiFetch('/users/change-pin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ currentPin: currentPinVal, newPin: newPinVal })
+          });
+          
+          if (res && res.message) {
+            showToast('UPI PIN changed successfully!', 'success');
+            modal.style.transform = 'translateY(100%)';
+            setTimeout(() => {
+              overlay.remove();
+              resolve(true);
+            }, 300);
+          } else {
+            throw new Error('Failed to change PIN');
+          }
+        } catch (err) {
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = '1';
+          submitBtn.querySelector('span').textContent = 'Confirm & Change';
+          errorEl.textContent = err.message || 'Error changing PIN. Please try again.';
+          
+          // Reset to step 1
+          step = 1;
+          currentPinVal = '';
+          newPinVal = '';
+          inputs.forEach(inp => inp.value = '');
+          titleEl.textContent = 'Change UPI PIN';
+          subtitleEl.textContent = 'Enter your current 6-digit UPI PIN';
+          submitBtn.querySelector('span').textContent = 'Continue';
+          checkSubmitState();
+          focusInput(0);
+        }
+      }
+    });
+  });
+}
+
 
