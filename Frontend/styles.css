@@ -1241,7 +1241,7 @@ input[type="file"].input::file-selector-button{
   background: #08080a;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px 20px 0 0;
-  padding: 20px 20px 30px;
+  padding: 20px 20px 110px; /* Added padding-bottom to clear the floating mobile bottom nav bar */
   animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   max-height: 80vh;
   overflow-y: auto;
