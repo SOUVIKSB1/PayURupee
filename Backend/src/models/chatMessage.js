@@ -6,6 +6,7 @@ const chatMessageSchema = new mongoose.Schema({
   text: { type: String, required: true },
   isRequest: { type: Boolean, default: false },
   amount: { type: Number, default: 0 },
+  read: { type: Boolean, default: false }, // whether recipient has read it
   timestamp: { type: Date, default: Date.now }
 }, { timestamps: true });
 

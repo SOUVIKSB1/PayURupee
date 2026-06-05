@@ -1919,3 +1919,26 @@ input[type="file"].input::file-selector-button{
   opacity: 1;
   transform: translateY(0) scale(1);
 }
+
+/* ──────────────────────────────────────────────
+   Contact Avatar — Unread Message Dot
+   ────────────────────────────────────────────── */
+@keyframes msgDotPulse {
+  0%   { transform: scale(1);    box-shadow: 0 0 0 0   rgba(255, 59, 92, 0.7); }
+  50%  { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(255, 59, 92, 0); }
+  100% { transform: scale(1);    box-shadow: 0 0 0 0   rgba(255, 59, 92, 0); }
+}
+
+.contact-unread-dot {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 13px;
+  height: 13px;
+  background: #ff3b5c;
+  border-radius: 50%;
+  border: 2px solid #08080a;
+  z-index: 2;
+  animation: msgDotPulse 1.4s ease-in-out infinite;
+  pointer-events: none;
+}

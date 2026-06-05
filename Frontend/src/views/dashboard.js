@@ -2,6 +2,7 @@ import { apiFetch } from '../api.js';
 import { store } from '../store.js';
 import { goto } from '../router.js';
 import { escapeHtml, formatCurrency, showMyQrModal, triggerCoinRain, showScratchCardModal, showToast, showContactDrawer, showSetPinModal } from '../utils.js';
+import { addNotification } from '../notifications.js';
 
 // Live count-up animation helper function
 function animateCounter(element, start, end, duration = 1100) {
@@ -297,10 +298,17 @@ export async function renderDashboard() {
       }
     }
     
+    // Shared unread state — hoisted here so the poll interval can access it
+    let lastUnreadSenders = new Set();
+    let updateUnreadDots = null; // will be assigned when contacts render
+
     // Periodically poll balance state to capture live incoming peer transactions
     const pollInterval = setInterval(async () => {
       try {
-        const p = await apiFetch('/users/me');
+        const [p, unreadRes] = await Promise.all([
+          apiFetch('/users/me'),
+          apiFetch('/chat/unread').catch(() => ({ unread: [], totalUnread: 0 }))
+        ]);
         const nextBal = p.user.balance ?? 0;
         
         if (store.user && p.user) {
@@ -322,6 +330,27 @@ export async function renderDashboard() {
         }
         
         lastKnownBalance = nextBal;
+
+        // Handle unread chat message notifications
+        const unreadList = unreadRes.unread || [];
+        const currentSenders = new Set(unreadList.map(u => u.senderEmail));
+
+        // Fire notification only for genuinely NEW senders not seen in last poll
+        unreadList.forEach(u => {
+          if (!lastUnreadSenders.has(u.senderEmail)) {
+            // Find display name from contacts if available
+            const contactEl = document.querySelector(`[data-contact-email="${CSS.escape(u.senderEmail)}"]`);
+            const name = contactEl ? contactEl.querySelector('span:last-child')?.textContent?.trim() : u.senderEmail;
+            addNotification(`💬 New message from ${name}: "${u.latestText.substring(0, 40)}${u.latestText.length > 40 ? '…' : ''}"`, 'info');
+          }
+        });
+
+        lastUnreadSenders = currentSenders;
+
+        // Update avatar dots
+        if (typeof updateUnreadDots === 'function') {
+          updateUnreadDots(unreadList);
+        }
       } catch (err) {
         console.warn('Dashboard poll cycle failed', err);
       }
@@ -371,6 +400,9 @@ export async function renderDashboard() {
       
       const colors = ['#ff7a00', '#00a2ff', '#00d26a', '#7c5cff', '#e60072', '#ffbc00'];
       
+      // Map from contact email -> item DOM element for dot updates
+      const contactItemMap = {};
+
       contacts.forEach((contact, idx) => {
         const item = document.createElement('div');
         item.style.display = 'flex';
@@ -379,20 +411,36 @@ export async function renderDashboard() {
         item.style.cursor = 'pointer';
         item.style.minWidth = '64px';
         item.style.textAlign = 'center';
+        item.style.position = 'relative';
+        item.dataset.contactEmail = contact.email;
         
         const initial = String(contact.name || contact.email || '?').charAt(0).toUpperCase();
         const color = colors[idx % colors.length];
         
         item.innerHTML = `
-          <div style="width: 52px; height: 52px; border-radius: 50%; background: ${color}22; border: 1.5px solid ${color}; color: ${color}; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; box-shadow: 0 4px 12px ${color}11; transition: all 0.2s ease;" class="contact-avatar">
-            ${initial}
+          <div style="position:relative; width:52px; height:52px;">
+            <div style="width: 52px; height: 52px; border-radius: 50%; background: ${color}22; border: 1.5px solid ${color}; color: ${color}; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; box-shadow: 0 4px 12px ${color}11; transition: all 0.2s ease;" class="contact-avatar">
+              ${initial}
+            </div>
+            <span class="contact-unread-dot" style="display:none; position:absolute; top:1px; right:1px; width:13px; height:13px; background:#ff3b5c; border-radius:50%; border:2px solid #08080a; z-index:2; animation: msgDotPulse 1.4s infinite;"></span>
           </div>
           <span style="font-size: 11.5px; font-weight: 600; color: #fff; margin-top: 8px; max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             ${escapeHtml(contact.name ? contact.name.split(' ')[0] : contact.email.split('@')[0])}
           </span>
         `;
         
-        item.addEventListener('click', () => {
+        item.addEventListener('click', async () => {
+          // Clear the dot immediately on click
+          const dot = item.querySelector('.contact-unread-dot');
+          if (dot) dot.style.display = 'none';
+          // Mark messages from this contact as read on backend
+          try {
+            await apiFetch('/chat/mark-read', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ senderEmail: contact.email })
+            });
+          } catch (e) { /* silent */ }
           showContactDrawer(contact, color);
         });
         
@@ -409,7 +457,27 @@ export async function renderDashboard() {
         });
         
         contactsGrid.appendChild(item);
+        contactItemMap[contact.email] = item;
       });
+
+      // Helper: refresh unread dots on contact avatars (assigned to outer-scope var)
+      updateUnreadDots = function(unreadList) {
+        // unreadList: [{ senderEmail, count, latestText }]
+        const unreadEmails = new Set(unreadList.map(u => u.senderEmail));
+        Object.entries(contactItemMap).forEach(([email, el]) => {
+          const dot = el.querySelector('.contact-unread-dot');
+          if (!dot) return;
+          dot.style.display = unreadEmails.has(email) ? 'block' : 'none';
+        });
+      };
+
+      // Initial unread fetch (lastUnreadSenders is outer-scoped)
+      try {
+        const initUnread = await apiFetch('/chat/unread');
+        const initList = initUnread.unread || [];
+        updateUnreadDots(initList);
+        initList.forEach(u => lastUnreadSenders.add(u.senderEmail));
+      } catch (e) { /* silent */ }
     }
 
     // Render Recent Transactions (Max 5)
