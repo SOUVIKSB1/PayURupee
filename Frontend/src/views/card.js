@@ -59,6 +59,7 @@ function injectCardStyles() {
       background: linear-gradient(135deg, rgba(25, 27, 38, 0.85) 0%, rgba(10, 11, 15, 0.95) 100%);
       backdrop-filter: blur(15px);
       -webkit-backdrop-filter: blur(15px);
+      transform: translateZ(1px);
     }
     .card-front::before {
       content: '';
@@ -75,7 +76,7 @@ function injectCardStyles() {
     /* Back styling */
     .card-back {
       background: linear-gradient(135deg, rgba(10, 11, 15, 0.95) 0%, rgba(20, 21, 28, 0.9) 100%);
-      transform: rotateY(180deg);
+      transform: rotateY(180deg) translateZ(1px);
       padding: 20px 0;
     }
     
@@ -182,10 +183,12 @@ function injectCardStyles() {
       transition: all 0.5s ease;
       z-index: 5;
       border-radius: 20px;
+      transform: translateZ(2px);
     }
     .card-3d-wrapper.frozen .card-frost-overlay {
       opacity: 1;
       visibility: visible;
+      transform: translateZ(2px);
     }
     .frost-text {
       color: #b0e2ff;
@@ -344,8 +347,9 @@ export async function renderCard() {
 
   // 3D Tilt rotation event
   scene.addEventListener('mousemove', (e) => {
-    // If card is flipped, disable the tilt effect to avoid visual jumping
+    // If card is flipped or device doesn't support mouse hover (touchscreens), disable tilt to prevent jitter
     if (wrapper.classList.contains('flipped')) return;
+    if (!window.matchMedia('(hover: hover)').matches) return;
 
     const rect = scene.getBoundingClientRect();
     const x = e.clientX - rect.left - rect.width / 2;
