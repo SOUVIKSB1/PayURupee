@@ -1716,14 +1716,35 @@ export function showChangePinModal() {
       errorEl.textContent = '';
 
       if (step === 1) {
-        currentPinVal = pinVal;
-        step = 2;
-        inputs.forEach(inp => inp.value = '');
-        titleEl.textContent = 'Enter New PIN';
-        subtitleEl.textContent = 'Choose a new 6-digit UPI PIN';
-        submitBtn.querySelector('span').textContent = 'Continue';
-        checkSubmitState();
-        focusInput(0);
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.5';
+        submitBtn.querySelector('span').textContent = 'Verifying...';
+        
+        try {
+          await apiFetch('/users/verify-pin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pin: pinVal })
+          });
+          
+          currentPinVal = pinVal;
+          step = 2;
+          inputs.forEach(inp => inp.value = '');
+          titleEl.textContent = 'Enter New PIN';
+          subtitleEl.textContent = 'Choose a new 6-digit UPI PIN';
+          submitBtn.querySelector('span').textContent = 'Continue';
+          submitBtn.disabled = false;
+          checkSubmitState();
+          focusInput(0);
+        } catch (err) {
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = '1';
+          submitBtn.querySelector('span').textContent = 'Continue';
+          errorEl.textContent = err.message || 'Current UPI PIN is incorrect';
+          inputs.forEach(inp => inp.value = '');
+          checkSubmitState();
+          focusInput(0);
+        }
       } else if (step === 2) {
         newPinVal = pinVal;
         step = 3;

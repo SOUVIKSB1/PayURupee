@@ -163,4 +163,30 @@ const changeUpiPin = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, uploadQr, claimReward, listContacts, setUpiPin, changeUpiPin };
+const verifyUpiPin = async (req, res) => {
+  const { pin } = req.body;
+  if (!pin || !/^\d{6}$/.test(pin)) {
+    return res.status(400).json({ message: 'PIN must be exactly 6 digits' });
+  }
+
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (!user.upiPin) {
+      return res.status(400).json({ message: 'UPI PIN not set yet' });
+    }
+
+    const isMatch = await bcrypt.compare(pin, user.upiPin);
+    if (!isMatch) {
+      return res.status(403).json({ message: 'Current UPI PIN is incorrect' });
+    }
+
+    res.json({ message: 'UPI PIN verified successfully' });
+  } catch (err) {
+    console.error('Error verifying UPI PIN:', err);
+    res.status(500).json({ message: 'Server error verifying UPI PIN' });
+  }
+};
+
+module.exports = { getProfile, uploadQr, claimReward, listContacts, setUpiPin, changeUpiPin, verifyUpiPin };
