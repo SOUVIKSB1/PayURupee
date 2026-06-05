@@ -216,13 +216,6 @@ if (sheetShowMyQr) {
 
 
 
-const sheetNavJars = document.getElementById('sheet-nav-jars');
-if (sheetNavJars) {
-  sheetNavJars.addEventListener('click', () => {
-    if (profileSheetMob) profileSheetMob.classList.add('hidden');
-    goto('jars');
-  });
-}
 
 const sheetEditProfile = document.getElementById('sheet-edit-profile');
 if (sheetEditProfile) {
