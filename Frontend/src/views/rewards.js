@@ -152,6 +152,41 @@ function injectRewardsStyles() {
       font-weight: 800;
       color: #FFD700;
     }
+    .back-navigation-row {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 24px;
+    }
+    .back-pill-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 30px;
+      padding: 8px 16px;
+      color: var(--muted, #8a8e9e);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      outline: none;
+    }
+    .back-pill-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--accent1, #ff7e5f);
+      color: #fff;
+      transform: translateX(-4px);
+      box-shadow: 0 4px 15px rgba(255, 126, 95, 0.15);
+    }
+    .back-pill-btn svg {
+      transition: transform 0.3s ease;
+    }
+    .back-pill-btn:hover svg {
+      transform: translateX(-2px);
+    }
   `;
   document.head.appendChild(style);
 }
@@ -178,15 +213,16 @@ export async function renderRewards() {
 
   main.innerHTML = `
     <div class="rewards-arena-container fade-in">
-      <div style="margin-bottom: 24px; display: flex; align-items: center; gap: 14px;">
-        <button class="small-btn ghost" id="btn-rewards-back" style="padding: 8px 12px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-          Back
+      <div class="back-navigation-row">
+        <button class="back-pill-btn" id="btn-rewards-back">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          <span>Back to Dashboard</span>
         </button>
-        <div>
-          <h2 style="margin: 0; color: #fff;">Reward Arena</h2>
-          <p class="smallmuted" style="margin: 4px 0 0;">Spin the Fortune Wheel to claim your cashback rewards!</p>
-        </div>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <h2 style="margin: 0; color: #fff;">Reward Arena</h2>
+        <p class="smallmuted" style="margin: 4px 0 0;">Spin the Fortune Wheel to claim your cashback rewards!</p>
       </div>
 
       <div class="rewards-split-layout">
