@@ -2549,7 +2549,7 @@ export function showSchedulePaymentModal(contact, color = '#ff7a00') {
   });
 
   // Submit
-  modal.querySelector('#sch-submit').addEventListener('click', () => {
+  modal.querySelector('#sch-submit').addEventListener('click', async () => {
     const amount = Number(modal.querySelector('#sch-amount').value);
     const note   = modal.querySelector('#sch-note').value.trim();
     errorEl.textContent = '';
@@ -2569,6 +2569,27 @@ export function showSchedulePaymentModal(contact, color = '#ff7a00') {
       if (!dayValue || dayValue < 1) { errorEl.textContent = 'Enter a valid day'; return; }
       if (scheduleType === 'weekly' && dayValue > 7) { errorEl.textContent = '1–7 for weekly'; return; }
       if (scheduleType === 'monthly' && dayValue > 31) { errorEl.textContent = '1–31 for monthly'; return; }
+    }
+
+    // Require UPI PIN verification
+    let pin;
+    try {
+      pin = await showVerifyPinModal();
+    } catch (err) {
+      errorEl.textContent = 'UPI PIN verification cancelled';
+      return;
+    }
+
+    // Verify PIN with the backend
+    try {
+      await apiFetch('/users/verify-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin })
+      });
+    } catch (err) {
+      errorEl.textContent = err.message || 'Incorrect UPI PIN';
+      return;
     }
 
     // Persist to localStorage
