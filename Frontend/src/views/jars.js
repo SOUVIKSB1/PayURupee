@@ -12,7 +12,7 @@ function injectJarsStyles() {
     .jars-container {
       max-width: 900px;
       margin: 0 auto;
-      padding: 24px 16px;
+      padding: 24px 16px 100px;
     }
     .jars-header {
       display: flex;

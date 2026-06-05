@@ -12,7 +12,7 @@ function injectRewardsStyles() {
     .rewards-arena-container {
       max-width: 800px;
       margin: 0 auto;
-      padding: 24px 16px;
+      padding: 24px 16px 100px;
     }
     .rewards-split-layout {
       display: grid;
