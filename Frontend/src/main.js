@@ -50,6 +50,10 @@ const USER_DESKTOP_NAV = `
     <span style="font-size: 14px; margin-right: 6px; display: inline-block;">🔮</span>
     <span>Piggy Jars</span>
   </button>
+  <button id="nav-card" class="nav-btn">
+    <span style="font-size: 14px; margin-right: 6px; display: inline-block;">💳</span>
+    <span>Virtual Card</span>
+  </button>
   <button id="nav-history" class="nav-btn">
     <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
     <span>History</span>
@@ -145,6 +149,7 @@ if (mainNav) {
     else if (id === 'nav-upload') goto('upload');
     else if (id === 'nav-bills') goto('bills');
     else if (id === 'nav-jars') goto('jars');
+    else if (id === 'nav-card') goto('card');
     else if (id === 'nav-history') goto('history');
     else if (id === 'nav-admin-users') {
       window.__currentAdminTab = 'users';
