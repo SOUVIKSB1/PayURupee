@@ -1274,10 +1274,11 @@ export function showSetPinModal() {
     modal.style.cssText = `
       background: #0d0e12; border-top: 3px solid #ff7a00;
       width: 100%; max-width: 480px; border-radius: 24px 24px 0 0;
-      padding: 32px 24px; box-sizing: border-box;
+      padding: 32px 24px calc(32px + env(safe-area-inset-bottom, 12px)); box-sizing: border-box;
       box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
       transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex; flex-direction: column; align-items: center; text-align: center;
+      max-height: 90vh; overflow-y: auto;
     `;
 
     // Contents
@@ -1472,11 +1473,11 @@ export function showVerifyPinModal() {
     modal.style.cssText = `
       background: #0d0e12; border-top: 3px solid #ff7a00;
       width: 100%; max-width: 480px; border-radius: 24px 24px 0 0;
-      padding: 32px 24px; box-sizing: border-box;
+      padding: 32px 24px calc(32px + env(safe-area-inset-bottom, 12px)); box-sizing: border-box;
       box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
       transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex; flex-direction: column; align-items: center; text-align: center;
-      position: relative;
+      position: relative; max-height: 90vh; overflow-y: auto;
     `;
 
     // Contents
@@ -1659,11 +1660,11 @@ export function showChangePinModal() {
     modal.style.cssText = `
       background: #0d0e12; border-top: 3px solid #ff7a00;
       width: 100%; max-width: 480px; border-radius: 24px 24px 0 0;
-      padding: 32px 24px; box-sizing: border-box;
+      padding: 32px 24px calc(32px + env(safe-area-inset-bottom, 12px)); box-sizing: border-box;
       box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
       transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex; flex-direction: column; align-items: center; text-align: center;
-      position: relative;
+      position: relative; max-height: 90vh; overflow-y: auto;
     `;
 
     // Contents
@@ -1909,11 +1910,11 @@ export function showEditProfileModal() {
     modal.style.cssText = `
       background: #0d0e12; border-top: 3px solid #00a2ff;
       width: 100%; max-width: 480px; border-radius: 24px 24px 0 0;
-      padding: 32px 24px; box-sizing: border-box;
+      padding: 32px 24px calc(32px + env(safe-area-inset-bottom, 12px)); box-sizing: border-box;
       box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
       transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex; flex-direction: column; align-items: center; text-align: center;
-      position: relative;
+      position: relative; max-height: 90vh; overflow-y: auto;
     `;
 
     // Contents
