@@ -2326,49 +2326,70 @@ export function renderSpendingInsights(txList, containerId = 'spending-insights-
       </div>
 
       <div class="insights-body">
-        <!-- Ring chart centred on mobile -->
-        <div class="insights-ring-wrap">
-          <div class="insights-ring" style="background: ${conicGrad}">
-            <div class="insights-ring-inner">
-              <div class="insights-ring-label">${dominant.label}</div>
+        <!-- Donut Chart & Overview Section -->
+        <div class="insights-chart-section">
+          <div class="insights-ring-wrap">
+            <div class="insights-ring" style="background: ${conicGrad}">
+              <div class="insights-ring-inner">
+                <span class="insights-ring-title">Spent</span>
+                <span class="insights-ring-value">${formatCurrency(totalSent + totalBills)}</span>
+              </div>
+            </div>
+          </div>
+          <div class="insights-quick-summary">
+            <div class="insights-dominant-badge" style="background: ${dominant.color}15; color: ${dominant.color}">
+              Dominant: ${dominant.label}
+            </div>
+            <div class="insights-week-compare" style="color: ${weekColor}">
+              ${weekLabel}
             </div>
           </div>
         </div>
 
-        <!-- Stats: full-width on mobile, side column on desktop -->
-        <div class="insights-stats">
-
-          <!-- 3-column legend chips (mobile) / vertical list (desktop) -->
-          <div class="insights-legend">
-            <div class="insights-legend-item">
-              <span class="insights-dot" style="background:#ff7a00"></span>
-              <span>Sent</span>
-              <strong class="insights-pct">${sentPct}%</strong>
+        <!-- Vertical Category Bars -->
+        <div class="insights-categories-list">
+          <!-- Sent Category -->
+          <div class="insights-cat-row">
+            <div class="insights-cat-info">
+              <span class="insights-cat-dot" style="background: #ff7a00"></span>
+              <span class="insights-cat-name">Sent</span>
             </div>
-            <div class="insights-legend-item">
-              <span class="insights-dot" style="background:#7c5cff"></span>
-              <span>Bills</span>
-              <strong class="insights-pct">${billsPct}%</strong>
+            <div class="insights-progress-wrapper">
+              <div class="insights-progress-bar" style="width: ${sentPct}%; background: #ff7a00;"></div>
             </div>
-            <div class="insights-legend-item">
-              <span class="insights-dot" style="background:#00d26a"></span>
-              <span>Rcvd</span>
-              <strong class="insights-pct">${recvPct}%</strong>
+            <div class="insights-cat-values">
+              <span class="insights-cat-amount">${formatCurrency(totalSent)}</span>
+              <span class="insights-cat-pct">${sentPct}%</span>
             </div>
           </div>
 
-          <div class="insights-week-stat" style="color:${weekColor}">
-            ${weekLabel}
+          <!-- Bills Category -->
+          <div class="insights-cat-row">
+            <div class="insights-cat-info">
+              <span class="insights-cat-dot" style="background: #7c5cff"></span>
+              <span class="insights-cat-name">Bills</span>
+            </div>
+            <div class="insights-progress-wrapper">
+              <div class="insights-progress-bar" style="width: ${billsPct}%; background: #7c5cff;"></div>
+            </div>
+            <div class="insights-cat-values">
+              <span class="insights-cat-amount">${formatCurrency(totalBills)}</span>
+              <span class="insights-cat-pct">${billsPct}%</span>
+            </div>
           </div>
 
-          <div class="insights-amounts">
-            <div class="insights-amount-item">
-              <div class="insights-amount-label">Total Out</div>
-              <div class="insights-amount-val" style="color:#ff5c6c">${formatCurrency(totalSent + totalBills)}</div>
+          <!-- Received Category -->
+          <div class="insights-cat-row">
+            <div class="insights-cat-info">
+              <span class="insights-cat-dot" style="background: #00d26a"></span>
+              <span class="insights-cat-name">Received</span>
             </div>
-            <div class="insights-amount-item">
-              <div class="insights-amount-label">Total In</div>
-              <div class="insights-amount-val" style="color:#00d26a">${formatCurrency(totalReceived)}</div>
+            <div class="insights-progress-wrapper">
+              <div class="insights-progress-bar" style="width: ${recvPct}%; background: #00d26a;"></div>
+            </div>
+            <div class="insights-cat-values">
+              <span class="insights-cat-amount">${formatCurrency(totalReceived)}</span>
+              <span class="insights-cat-pct">${recvPct}%</span>
             </div>
           </div>
         </div>

@@ -148,18 +148,12 @@ export async function renderDashboard() {
               <div class="smallmuted" style="grid-column: span 4; padding: 12px 0;">Loading utilities...</div>
             </div>
           </div>
-
-          <!-- Spending Insights Card (Feature 1) -->
-          <div id="spending-insights-container"></div>
         </div>
         
         <!-- Right Column: Sidebar summaries -->
         <div class="dashboard-side-col">
           <!-- Admin Panel Section (Only visible to admin) -->
           <div id="admin-section-container"></div>
-
-          <!-- Upcoming Scheduled Payments (Feature 2) -->
-          <div id="upcoming-payments-card" style="display:none;"></div>
           
           <!-- Recent Transactions Section -->
           <div class="paytm-section">
@@ -170,7 +164,14 @@ export async function renderDashboard() {
             <div id="recent-transactions-list" style="display: flex; flex-direction: column; gap: 10px;">
               <div class="smallmuted" style="text-align: center; padding: 12px 0;">Loading transactions...</div>
             </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Bottom Row for Spent Analysis (Insights) & Reminder (Upcoming) -->
+      <div class="dashboard-bottom-row">
+        <div id="spending-insights-container"></div>
+        <div id="upcoming-payments-card" style="display:none;"></div>
       </div>
     </div>
   `;
