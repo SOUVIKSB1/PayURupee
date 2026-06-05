@@ -203,15 +203,15 @@ body{
 
 /* Card (frosted glass) */
 .card{
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(13, 14, 18, 0.78);
   border-radius: var(--radius-lg);
   box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.5),
-    0 1px 0 rgba(255, 255, 255, 0.02) inset;
+    0 12px 40px rgba(0, 0, 0, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.03) inset;
   padding:20px;
   margin-bottom:20px;
   transition: transform .3s cubic-bezier(.25,.8,.25,1), box-shadow .3s ease;
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.05);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   position:relative;
@@ -498,17 +498,16 @@ body{
 .center{display:flex;align-items:center;justify-content:center;flex-direction:column;padding:48px}
 .center h3{margin:12px 0 6px;color:#fff}
 
-/* micro animations */
 /* macOS-like page zoom transitions expanding from the clicked button origin */
 .fade-in {
-  animation: macZoomIn 0.16s ease-out both;
+  animation: macZoomIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
   transform-origin: var(--zoom-origin-x, 50%) var(--zoom-origin-y, 50%);
 }
 
 @keyframes macZoomIn {
   from {
     opacity: 0;
-    transform: scale(0.96);
+    transform: scale(0.965);
   }
   to {
     opacity: 1;
@@ -1413,8 +1412,8 @@ input[type="file"].input::file-selector-button{
 
 /* Hero Wallet Card */
 .paytm-hero-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(13, 14, 18, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 20px;
   padding: 24px;
   margin-bottom: 20px;
@@ -1888,3 +1887,35 @@ input[type="file"].input::file-selector-button{
   }
 }
 
+/* Scroll-driven page reveal animations (progressive enhancement) */
+@media (prefers-reduced-motion: no-preference) {
+  @supports ((animation-timeline: view()) and (animation-range: entry)) {
+    @keyframes growAndFade {
+      from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.975);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .card, .paytm-hero-card {
+      animation: growAndFade auto linear backwards;
+      animation-timeline: view();
+      animation-range: entry 0% entry 22%;
+    }
+  }
+}
+
+/* Fallback reveal styling for browsers without native scroll-driven animations support */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(24px) scale(0.975);
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scroll-reveal.revealed {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}

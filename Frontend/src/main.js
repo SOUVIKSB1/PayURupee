@@ -523,3 +523,36 @@ document.addEventListener('click', (e) => {
     main.style.setProperty('--zoom-origin-y', `${y}px`);
   }
 });
+
+// Dynamic Scroll Reveal Fallback for browsers lacking native Scroll-Driven animations support (Firefox / older Safari)
+if (!CSS.supports('(animation-timeline: view()) and (animation-range: entry)')) {
+  const scrollObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+        }
+      }
+    },
+    { threshold: 0.05 }
+  );
+
+  const initRevealOnElements = () => {
+    document.querySelectorAll('.card:not(.reveal-observed), .paytm-hero-card:not(.reveal-observed)').forEach((el) => {
+      el.classList.add('reveal-observed', 'scroll-reveal');
+      scrollObserver.observe(el);
+    });
+  };
+
+  // Observe dynamically loaded router views / components
+  const pageMutationObserver = new MutationObserver(initRevealOnElements);
+  pageMutationObserver.observe(document.body, { childList: true, subtree: true });
+
+  // Initial check
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initRevealOnElements);
+  } else {
+    initRevealOnElements();
+  }
+}
+
