@@ -1539,13 +1539,8 @@ input[type="file"].input::file-selector-button{
   margin-bottom: 0;
   height: 100%;
   background: radial-gradient(circle at top right, rgba(255, 122, 0, 0.12), rgba(124, 92, 255, 0.08), rgba(13, 14, 18, 0.85)) !important;
-  border-color: rgba(255, 122, 0, 0.15) !important;
+  border: 1px solid rgba(255, 122, 0, 0.2) !important;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
-  transition: transform .3s cubic-bezier(.25,.8,.25,1), box-shadow .3s ease, border-color .3s ease;
-}
-.wallet-card-split:hover {
-  border-color: rgba(255, 122, 0, 0.35) !important;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), 0 0 20px rgba(255, 122, 0, 0.1) !important;
 }
 
 .action-card-split {
@@ -1555,13 +1550,8 @@ input[type="file"].input::file-selector-button{
   margin-bottom: 0;
   height: 100%;
   background: radial-gradient(circle at top right, rgba(0, 162, 255, 0.1), rgba(124, 92, 255, 0.06), rgba(13, 14, 18, 0.85)) !important;
-  border-color: rgba(0, 162, 255, 0.12) !important;
+  border: 1px solid rgba(0, 162, 255, 0.18) !important;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
-  transition: transform .3s cubic-bezier(.25,.8,.25,1), box-shadow .3s ease, border-color .3s ease;
-}
-.action-card-split:hover {
-  border-color: rgba(0, 162, 255, 0.3) !important;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), 0 0 20px rgba(0, 162, 255, 0.08) !important;
 }
 
 @media (max-width: 520px) {
