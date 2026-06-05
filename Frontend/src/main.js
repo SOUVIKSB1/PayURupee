@@ -14,7 +14,7 @@
 import { store, logout } from './store.js';
 import { apiFetch } from './api.js';
 import { goto } from './router.js';
-import { isDemoMode, setDemoMode, showMyQrModal, showChangePinModal } from './utils.js';
+import { isDemoMode, setDemoMode, showMyQrModal, showChangePinModal, showEditProfileModal } from './utils.js';
 import { 
   updateNotificationBadge, 
   renderNotificationsList, 
@@ -205,6 +205,14 @@ if (sheetShowMyQr) {
   sheetShowMyQr.addEventListener('click', () => {
     if (profileSheetMob) profileSheetMob.classList.add('hidden');
     showMyQrModal();
+  });
+}
+
+const sheetEditProfile = document.getElementById('sheet-edit-profile');
+if (sheetEditProfile) {
+  sheetEditProfile.addEventListener('click', () => {
+    if (profileSheetMob) profileSheetMob.classList.add('hidden');
+    showEditProfileModal().catch(() => {});
   });
 }
 

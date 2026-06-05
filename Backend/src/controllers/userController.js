@@ -14,6 +14,31 @@ const getProfile = async (req, res) => {
   res.json({ user: userObj });
 };
 
+const updateProfile = async (req, res) => {
+  const { name } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ message: 'Name is required' });
+  }
+
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.name = name.trim();
+    await user.save();
+
+    const userObj = user.toObject();
+    userObj.hasUpiPin = !!user.upiPin;
+    delete userObj.upiPin;
+    delete userObj.password;
+
+    res.json({ message: 'Profile updated successfully', user: userObj });
+  } catch (err) {
+    console.error('Error updating profile:', err);
+    res.status(500).json({ message: 'Server error updating profile' });
+  }
+};
+
 const uploadQr = async (req, res) => {
   const user = req.user;
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
@@ -189,4 +214,4 @@ const verifyUpiPin = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, uploadQr, claimReward, listContacts, setUpiPin, changeUpiPin, verifyUpiPin };
+module.exports = { getProfile, updateProfile, uploadQr, claimReward, listContacts, setUpiPin, changeUpiPin, verifyUpiPin };

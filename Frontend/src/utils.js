@@ -1893,4 +1893,129 @@ export function showChangePinModal() {
   });
 }
 
+export function showEditProfileModal() {
+  return new Promise((resolve) => {
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'edit-profile-overlay';
+    overlay.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(4, 4, 6, 0.85); display: flex; align-items: flex-end;
+      justify-content: center; z-index: 999999;
+    `;
+
+    // Create modal container
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      background: #0d0e12; border-top: 3px solid #00a2ff;
+      width: 100%; max-width: 480px; border-radius: 24px 24px 0 0;
+      padding: 32px 24px; box-sizing: border-box;
+      box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+      transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      position: relative;
+    `;
+
+    // Contents
+    modal.innerHTML = `
+      <button id="btn-edit-profile-cancel-top" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 4px;">✕</button>
+      <div style="font-size: 40px; margin-bottom: 16px;">👤</div>
+      <h3 style="margin: 0 0 8px; color: #fff; font-size: 20px; font-weight: 800;">Edit Profile</h3>
+      <p style="margin: 0 0 24px; color: var(--muted); font-size: 13.5px;">Update your account personal name</p>
+      
+      <div style="width: 100%; text-align: left; margin-bottom: 24px;">
+        <label style="display: block; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Full Name</label>
+        <input type="text" id="edit-profile-name-input" class="input" style="width: 100%; margin-bottom: 0;" />
+        <div id="edit-profile-error" style="color: #ff5c6c; font-size: 13px; font-weight: 600; min-height: 18px; margin-top: 8px;"></div>
+      </div>
+
+      <div style="display: flex; gap: 12px; width: 100%;">
+        <button id="btn-edit-profile-cancel" class="cancel-btn" style="flex: 1; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; font-weight: 700; cursor: pointer;">Cancel</button>
+        <button id="btn-edit-profile-submit" class="pay-now-btn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; background: #00a2ff; border: none; opacity: 1; pointer-events: auto;">
+          <span>Save Changes</span>
+        </button>
+      </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Trigger slide up
+    setTimeout(() => {
+      modal.style.transform = 'translateY(0)';
+    }, 10);
+
+    const nameInput = modal.querySelector('#edit-profile-name-input');
+    const submitBtn = modal.querySelector('#btn-edit-profile-submit');
+    const cancelBtn = modal.querySelector('#btn-edit-profile-cancel');
+    const cancelTopBtn = modal.querySelector('#btn-edit-profile-cancel-top');
+    const errorEl = modal.querySelector('#edit-profile-error');
+
+    if (store.user && store.user.name) {
+      nameInput.value = store.user.name;
+    }
+    
+    // Focus only if desktop screen width
+    const isMobileScreen = window.innerWidth <= 850;
+    if (!isMobileScreen) {
+      nameInput.focus();
+    }
+
+    const handleDismiss = () => {
+      modal.style.transform = 'translateY(100%)';
+      setTimeout(() => {
+        overlay.remove();
+        resolve(false);
+      }, 300);
+    };
+
+    cancelBtn.addEventListener('click', handleDismiss);
+    cancelTopBtn.addEventListener('click', handleDismiss);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) handleDismiss();
+    });
+
+    submitBtn.addEventListener('click', async () => {
+      const newName = nameInput.value.trim();
+      if (!newName) {
+        errorEl.textContent = 'Name cannot be empty';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = '0.5';
+      submitBtn.querySelector('span').textContent = 'Saving...';
+
+      try {
+        const res = await apiFetch('/users/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newName })
+        });
+
+        if (res && res.user) {
+          store.user = res.user;
+          localStorage.setItem('ewallet_user', JSON.stringify(store.user));
+          if (window.__onAuthChange) window.__onAuthChange();
+          showToast('Profile updated successfully!', 'success');
+          
+          modal.style.transform = 'translateY(100%)';
+          setTimeout(() => {
+            overlay.remove();
+            resolve(true);
+          }, 300);
+        } else {
+          throw new Error('Failed to update profile');
+        }
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.querySelector('span').textContent = 'Save Changes';
+        errorEl.textContent = err.message || 'Error updating profile. Please try again.';
+      }
+    });
+  });
+}
+
+
 
