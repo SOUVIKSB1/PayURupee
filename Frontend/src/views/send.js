@@ -1,7 +1,7 @@
 import { apiFetch } from '../api.js';
 import { store, setAuth } from '../store.js';
 import { goto } from '../router.js';
-import { isDemoMode, showStatusOverlay, showVerifyPinModal } from '../utils.js';
+import { isDemoMode, showStatusOverlay, showVerifyPinModal, escapeHtml } from '../utils.js';
 import { addNotification } from '../notifications.js';
 
 export function renderSend() {
@@ -165,7 +165,8 @@ export function renderSend() {
           const amtEl = document.querySelector('input[name="amount"]');
           if (toEl) {
             toEl.value = contact.email;
-            if (amtEl) amtEl.focus();
+            const isMobileScreen = window.innerWidth <= 850;
+            if (amtEl && !isMobileScreen) amtEl.focus();
           }
         });
         
@@ -186,6 +187,9 @@ export function renderSend() {
     console.warn('Failed to load contacts for send view', err);
   });
 
-  // Set initial focus to the first input field
-  document.querySelector('input[name="toEmail"]')?.focus();
+  // Set initial focus to the first input field on desktop only
+  const isMobileScreen = window.innerWidth <= 850;
+  if (!isMobileScreen) {
+    document.querySelector('input[name="toEmail"]')?.focus();
+  }
 }
