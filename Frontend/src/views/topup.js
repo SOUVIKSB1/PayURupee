@@ -1,7 +1,7 @@
 import { apiFetch } from '../api.js';
 import { store } from '../store.js';
 import { goto } from '../router.js';
-import { isDemoMode, showAuthAnimation, showToast, attemptForceDeposit, formatCurrency } from '../utils.js';
+import { isDemoMode, showAuthAnimation, showToast, attemptForceDeposit, formatCurrency, escapeHtml } from '../utils.js';
 import { addNotification } from '../notifications.js';
 
 export function renderTopUp() {
@@ -105,9 +105,33 @@ export function renderTopUp() {
           throw new Error('Unexpected response');
         } catch (e) {
           console.warn('Force deposit persistence failed', e);
-          showToast('Payment processing failed', 'err');
-          msg.textContent = 'Transaction failed — please try again';
-          msg.className = 'err';
+          const errMsg = e.message || 'Transaction failed — please try again';
+          
+          let maxRemaining = 5000;
+          try {
+            const historyRes = await apiFetch('/wallet/history');
+            const txs = historyRes.history || historyRes.data || [];
+            const dayStart = new Date();
+            dayStart.setHours(0,0,0,0);
+            
+            const todayTopups = txs
+              .filter(tx => tx.type === 'topup' && new Date(tx.createdAt) >= dayStart)
+              .reduce((sum, tx) => sum + Number(tx.amount), 0);
+            
+            maxRemaining = Math.max(0, 5000 - todayTopups);
+          } catch (historyErr) {
+            console.error('Failed to calculate remaining limit:', historyErr);
+          }
+
+          showToast(errMsg, 'err');
+          msg.innerHTML = `
+            <div style="color: #ff5c6c; font-weight: 700; line-height: 1.4;">
+              ${escapeHtml(errMsg)}
+              <div style="margin-top: 8px; font-size: 13px; color: var(--accent1); background: rgba(255, 122, 0, 0.08); border: 1px solid rgba(255, 122, 0, 0.2); border-radius: 8px; padding: 8px 12px; display: inline-block;">
+                Remaining top-up allowance today: <strong>₹${maxRemaining.toFixed(2)}</strong>
+              </div>
+            </div>
+          `;
           return;
         }
       }
