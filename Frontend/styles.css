@@ -83,6 +83,18 @@ body{
   display:inline-block;
 }
 
+.brand-rupee {
+  font-size: 1.25em;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent1) 0%, #ff5c00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  margin: 0 1px;
+  transform: rotate(-6deg);
+  filter: drop-shadow(0 2px 6px rgba(255, 122, 0, 0.35));
+}
+
 /* Navigation */
 .nav{display:flex;gap:4px;align-items:center}
 .nav-toggle{display:none;background:transparent;border:1px solid rgba(255,255,255,0.06);color:#e6eef8;border-radius:10px;padding:8px 12px;cursor:pointer}
