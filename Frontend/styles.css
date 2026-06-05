@@ -1336,13 +1336,12 @@ input[type="file"].input::file-selector-button{
 
 /* Paytm dashboard styles */
 .paytm-section {
-  background: rgba(255, 255, 255, 0.02);
+  background: #0c0d12;
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 16px;
   padding: 18px 20px;
   margin-bottom: 20px;
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 .paytm-section h3 {
@@ -1426,7 +1425,7 @@ input[type="file"].input::file-selector-button{
 
 /* Hero Wallet Card */
 .paytm-hero-card {
-  background: rgba(13, 14, 18, 0.78);
+  background: #0c0d12;
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 20px;
   padding: 24px;
@@ -1434,9 +1433,7 @@ input[type="file"].input::file-selector-button{
   display: flex;
   flex-direction: column;
   gap: 20px;
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  will-change: transform;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
 }
 
 .paytm-hero-header {
@@ -1538,9 +1535,9 @@ input[type="file"].input::file-selector-button{
   justify-content: space-between;
   margin-bottom: 0;
   height: 100%;
-  background: radial-gradient(circle at top right, rgba(255, 122, 0, 0.12), rgba(124, 92, 255, 0.08), rgba(13, 14, 18, 0.85)) !important;
-  border: 1px solid rgba(255, 122, 0, 0.2) !important;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+  background: radial-gradient(circle at top right, rgba(255, 122, 0, 0.08), #0c0d12) !important;
+  border: 1px solid rgba(255, 122, 0, 0.15) !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6) !important;
 }
 
 .action-card-split {
@@ -1549,9 +1546,9 @@ input[type="file"].input::file-selector-button{
   justify-content: space-between;
   margin-bottom: 0;
   height: 100%;
-  background: radial-gradient(circle at top right, rgba(0, 162, 255, 0.1), rgba(124, 92, 255, 0.06), rgba(13, 14, 18, 0.85)) !important;
-  border: 1px solid rgba(0, 162, 255, 0.18) !important;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+  background: radial-gradient(circle at top right, rgba(0, 162, 255, 0.07), #0c0d12) !important;
+  border: 1px solid rgba(0, 162, 255, 0.12) !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6) !important;
 }
 
 @media (max-width: 520px) {
@@ -1938,7 +1935,7 @@ input[type="file"].input::file-selector-button{
 }
 
 /* Scroll-driven page reveal animations (progressive enhancement) */
-@media (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: no-preference) and (min-width: 769px) {
   @supports ((animation-timeline: view()) and (animation-range: entry)) {
     @keyframes growAndFade {
       from {
