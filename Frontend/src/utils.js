@@ -1378,7 +1378,10 @@ export function showSetPinModal() {
           
           if (res && res.message) {
             showToast('UPI PIN set successfully!', 'success');
-            if (store.user) store.user.hasUpiPin = true;
+            if (store.user) {
+              store.user.hasUpiPin = true;
+              localStorage.setItem('ewallet_user', JSON.stringify(store.user));
+            }
             
             // Slide down and remove
             modal.style.transform = 'translateY(100%)';

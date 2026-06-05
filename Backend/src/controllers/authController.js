@@ -17,9 +17,7 @@ const register = async (req, res) => {
   const user = new User({ name, email, password: hashed, role: 'user', balance: 0 });
   await user.save();
 
-  const token = signToken(user);
-
-  res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role, balance: user.balance } });
+  res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role, balance: user.balance, hasUpiPin: !!user.upiPin } });
 };
 
 const login = async (req, res) => {
@@ -34,7 +32,7 @@ const login = async (req, res) => {
   if (user.isBlocked) return res.status(403).json({ message: 'Account is blocked. Please contact admin.' });
 
   const token = signToken(user);
-  res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role, balance: user.balance } });
+  res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role, balance: user.balance, hasUpiPin: !!user.upiPin } });
 };
 
 const resetPassword = async (req, res) => {
