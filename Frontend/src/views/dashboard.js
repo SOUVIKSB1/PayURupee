@@ -42,12 +42,12 @@ export async function renderDashboard() {
             <div class="paytm-balance-title">PayU₹upee Wallet</div>
             <div id="balance" class="paytm-balance-value">₹0.00</div>
           </div>
-          <button class="small-btn solid" id="hero-topup" style="margin-top: 14px; width: 100%;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+          <button class="hero-action-btn-primary" id="hero-topup" style="margin-top: 14px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
             Add Money to Wallet
           </button>
-          <button class="small-btn ghost" id="hero-card-btn" style="margin-top: 10px; width: 100%; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.01); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff;">
-            <span style="margin-right: 6px;">💳</span> View Platinum Card
+          <button class="hero-action-btn-secondary" id="hero-card-btn" style="margin-top: 10px;">
+            <span>💳</span> View Platinum Card
           </button>
         </div>
         
