@@ -60,6 +60,12 @@ export function goto(route, params = {}) {
     case 'bills':
       authGuard(() => import('./views/bills.js').then(m => m.renderBills()), 'bills');
       break;
+    case 'jars':
+      authGuard(() => import('./views/jars.js').then(m => m.renderJars()), 'jars');
+      break;
+    case 'rewards':
+      authGuard(() => import('./views/rewards.js').then(m => m.renderRewards()), 'rewards');
+      break;
     case 'history':
       authGuard(() => import('./views/history.js').then(m => m.renderHistory()), 'history');
       break;

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const transactionSchema = new mongoose.Schema({
-  type: { type: String, enum: ['send', 'receive', 'bill', 'topup', 'admin_adjust'], required: true },
+  type: { type: String, enum: ['send', 'receive', 'bill', 'topup', 'admin_adjust', 'jar_deposit', 'jar_withdraw'], required: true },
   from: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // nullable for topup or bill provider
   to: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },   // nullable for bill provider
   amount: { type: Number, required: true },

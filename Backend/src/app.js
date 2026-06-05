@@ -11,6 +11,7 @@ const walletRoutes = require('./routes/wallet');
 const billRoutes = require('./routes/bills');
 const adminRoutes = require('./routes/admin');
 const chatRoutes = require('./routes/chat');
+const jarRoutes = require('./routes/jars');
 
 const { errorHandler } = require('./middleware/errorHandler');
 
@@ -49,6 +50,7 @@ app.use('/api/wallet', walletRoutes);
 app.use('/api/bills', billRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/jars', jarRoutes);
 
 // health
 app.get('/health', (req, res) => res.json({ status: 'ok' }));

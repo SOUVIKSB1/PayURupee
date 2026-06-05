@@ -76,6 +76,13 @@ export async function renderDashboard() {
               </div>
               <span>My QR</span>
             </button>
+
+            <button class="paytm-item" id="hero-jars">
+              <div class="paytm-icon-wrapper">
+                <span style="font-size: 18px;">🔮</span>
+              </div>
+              <span>Piggy Jars</span>
+            </button>
             
             <button class="paytm-item" id="hero-passbook">
               <div class="paytm-icon-wrapper">
@@ -182,6 +189,7 @@ export async function renderDashboard() {
   document.getElementById('hero-topup').addEventListener('click', () => goto('topup'));
   document.getElementById('hero-passbook').addEventListener('click', () => goto('history'));
   document.getElementById('hero-my-qr').addEventListener('click', () => showMyQrModal());
+  document.getElementById('hero-jars').addEventListener('click', () => goto('jars'));
   const updateRewardsBanner = () => {
     const wrapper = document.getElementById('rewards-banner-wrapper');
     if (!wrapper) return;
@@ -219,15 +227,7 @@ export async function renderDashboard() {
     const btn = document.getElementById('btn-dashboard-rewards');
     if (btn) {
       btn.onclick = () => {
-        const hasReward = btn.getAttribute('data-has-reward') === 'true';
-        if (hasReward) {
-          const currentPending = (store.user && Array.isArray(store.user.rewards)) ? store.user.rewards.find(r => !r.scratched) : null;
-          if (currentPending) {
-            showScratchCardModal(currentPending);
-          }
-        } else {
-          showToast('Send money or pay utility bills to unlock cashback scratch cards!', 'info');
-        }
+        goto('rewards');
       };
     }
   };

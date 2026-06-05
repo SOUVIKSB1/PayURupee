@@ -2998,3 +2998,243 @@ export function showSplitBillModal(allContacts = []) {
   });
 }
 
+export function showVoicePayOverlay() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'voice-pay-overlay';
+  overlay.style.backgroundColor = 'rgba(10, 11, 15, 0.95)';
+  overlay.style.backdropFilter = 'blur(15px)';
+  overlay.style.webkitBackdropFilter = 'blur(15px)';
+  overlay.style.display = 'flex';
+  overlay.style.flexDirection = 'column';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+  overlay.style.zIndex = '9999';
+
+  overlay.innerHTML = `
+    <div style="position: absolute; top: 20px; right: 20px;">
+      <button id="voice-close-btn" style="background: none; border: none; color: #fff; font-size: 24px; cursor: pointer;">✕</button>
+    </div>
+    
+    <div style="text-align: center; max-width: 420px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 20px;">
+      <h2 style="color: #fff; margin: 0; font-size: 24px; font-weight: 800; background: linear-gradient(90deg, #ff7e5f, #00a2ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Aura Voice Pay</h2>
+      <p id="voice-status-text" class="smallmuted" style="font-size: 14px; margin: 0; min-height: 48px; line-height: 1.5;">Listening for commands...<br><span style="font-size: 12px; opacity: 0.7;">e.g., "Send 500 to bob@gmail.com" or "Go to jars"</span></p>
+      
+      <!-- Visual Equalizer Wave Canvas -->
+      <canvas id="voice-wave-canvas" width="300" height="120" style="width: 300px; height: 120px; margin: 10px 0;"></canvas>
+
+      <!-- Input Fallback (for non-speech browsers or errors) -->
+      <div id="voice-input-fallback" style="display: none; width: 100%; margin-top: 10px;">
+        <input type="text" id="voice-fallback-text" placeholder="Type financial command here..." class="input" style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; padding: 10px;">
+        <button id="btn-submit-fallback-voice" class="btn-primary" style="width: 100%; margin-top: 10px; padding: 10px;">Run Command</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <div id="voice-mic-indicator" style="width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #ff7e5f, #feb47b); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(255, 126, 95, 0.4); cursor: pointer; transition: transform 0.2s ease;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+        </div>
+        <span class="smallmuted" style="font-size: 11px;">TAP TO TALK</span>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const canvas = overlay.querySelector('#voice-wave-canvas');
+  const ctx = canvas.getContext('2d');
+  const statusText = overlay.querySelector('#voice-status-text');
+  const micIndicator = overlay.querySelector('#voice-mic-indicator');
+  const fallbackArea = overlay.querySelector('#voice-input-fallback');
+  const fallbackInput = overlay.querySelector('#voice-fallback-text');
+  const fallbackBtn = overlay.querySelector('#btn-submit-fallback-voice');
+  const closeBtn = overlay.querySelector('#voice-close-btn');
+
+  let animating = true;
+  let phase = 0;
+  let audioLevel = 15; // default simulated pulse level
+
+  function draw() {
+    if (!animating) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    phase += 0.08;
+
+    // Draw three glowing sine waves
+    drawWave(ctx, canvas.width, canvas.height, phase, audioLevel, 'rgba(255, 126, 95, 0.5)', 1.2);
+    drawWave(ctx, canvas.width, canvas.height, phase + 2, audioLevel * 0.7, 'rgba(0, 162, 255, 0.5)', 1.8);
+    drawWave(ctx, canvas.width, canvas.height, phase + 4, audioLevel * 0.4, 'rgba(0, 210, 106, 0.6)', 0.9);
+
+    requestAnimationFrame(draw);
+  }
+
+  function drawWave(cContext, w, h, wavePhase, amp, color, freq) {
+    cContext.beginPath();
+    cContext.lineWidth = 3;
+    cContext.strokeStyle = color;
+    cContext.shadowBlur = 10;
+    cContext.shadowColor = color;
+    for (let x = 0; x < w; x++) {
+      const y = h / 2 + Math.sin(x * 0.02 * freq + wavePhase) * (amp + Math.sin(wavePhase * 2) * 3);
+      if (x === 0) cContext.moveTo(x, y);
+      else cContext.lineTo(x, y);
+    }
+    cContext.stroke();
+    cContext.shadowBlur = 0; // reset
+  }
+
+  // Start visual loop
+  draw();
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition;
+  let isListening = false;
+
+  if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      isListening = true;
+      statusText.innerHTML = `Listening...<br><span style="font-size:11px;color:#00d26a;">Speak your command now</span>`;
+      micIndicator.style.transform = 'scale(1.1)';
+      micIndicator.style.background = 'linear-gradient(135deg, #00a2ff, #00d26a)';
+      micIndicator.style.boxShadow = '0 0 25px rgba(0, 162, 255, 0.6)';
+      audioLevel = 25; // boost equalizer wave size when listening
+    };
+
+    recognition.onend = () => {
+      isListening = false;
+      micIndicator.style.transform = 'scale(1)';
+      micIndicator.style.background = 'linear-gradient(135deg, #ff7e5f, #feb47b)';
+      micIndicator.style.boxShadow = '0 0 20px rgba(255, 126, 95, 0.4)';
+      audioLevel = 10; // drop wave activity
+    };
+
+    recognition.onerror = (e) => {
+      console.warn('Speech recognition error:', e);
+      statusText.innerHTML = `<span style="color:#e74c3c;">Speech input error: ${e.error || 'Access Denied'}</span><br><span style="font-size:11px;">You can type your command below instead:</span>`;
+      fallbackArea.style.display = 'block';
+    };
+
+    recognition.onresult = (e) => {
+      const text = e.results[0][0].transcript;
+      statusText.innerHTML = `Heard: <strong style="color:#fff;">"${escapeHtml(text)}"</strong>`;
+      setTimeout(() => processVoiceCommand(text), 1000);
+    };
+  } else {
+    statusText.innerHTML = `Speech Recognition not supported in this browser.<br><span style="font-size:11px;">Please type your command below:</span>`;
+    fallbackArea.style.display = 'block';
+  }
+
+  function startRecognition() {
+    if (!recognition) return;
+    try {
+      recognition.start();
+    } catch (_) {
+      try { recognition.stop(); } catch (_) {}
+    }
+  }
+
+  if (recognition) startRecognition();
+
+  micIndicator.addEventListener('click', () => {
+    if (recognition) {
+      if (isListening) {
+        recognition.stop();
+      } else {
+        startRecognition();
+      }
+    } else {
+      fallbackArea.style.display = 'block';
+      fallbackInput.focus();
+    }
+  });
+
+  fallbackBtn.addEventListener('click', () => {
+    const txt = fallbackInput.value.trim();
+    if (txt) processVoiceCommand(txt);
+  });
+
+  fallbackInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const txt = fallbackInput.value.trim();
+      if (txt) processVoiceCommand(txt);
+    }
+  });
+
+  function close() {
+    animating = false;
+    if (recognition) {
+      try { recognition.stop(); } catch (_) {}
+    }
+    overlay.remove();
+  }
+
+  closeBtn.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+
+  function processVoiceCommand(commandText) {
+    const raw = String(commandText).trim().toLowerCase();
+    
+    // 1. Send/Pay command parser: (e.g. "Send 500 to alice@pay.com" or "Pay 200 to bob@gmail.com")
+    // Match: send/pay + amount + to/for + email
+    const sendRegex = /(?:send|pay)\s+(\d+(?:\.\d+)?)\s+(?:to|for)\s+([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i;
+    const sendMatch = raw.match(sendRegex);
+    if (sendMatch) {
+      const amount = parseFloat(sendMatch[1]);
+      const toEmail = sendMatch[2];
+      close();
+      store.qrPrefill = { toEmail, amount, note: 'Voice-initiated payment' };
+      goto('send');
+      showToast(`Prefilled payment to ${toEmail}!`, 'success');
+      return;
+    }
+
+    // 2. Route transitions
+    if (/jars|savings|goal/i.test(raw)) {
+      close();
+      goto('jars');
+      showToast('Navigating to Savings Jars...', 'success');
+      return;
+    }
+    if (/rewards|wheel|arena/i.test(raw)) {
+      close();
+      goto('rewards');
+      showToast('Navigating to Reward Arena...', 'success');
+      return;
+    }
+    if (/history|transaction/i.test(raw)) {
+      close();
+      goto('history');
+      showToast('Navigating to Transaction History...', 'success');
+      return;
+    }
+    if (/top\s*up|add\s*money/i.test(raw)) {
+      close();
+      goto('topup');
+      showToast('Navigating to Top Up page...', 'success');
+      return;
+    }
+    if (/home|dashboard/i.test(raw)) {
+      close();
+      goto('dashboard');
+      showToast('Navigating to Dashboard...', 'success');
+      return;
+    }
+    if (/bill/i.test(raw)) {
+      close();
+      goto('bills');
+      showToast('Navigating to Bills...', 'success');
+      return;
+    }
+
+    // Unrecognized command
+    statusText.innerHTML = `<span style="color:#e74c3c;">Command not recognized: "${escapeHtml(commandText)}"</span><br><span style="font-size:11px;">Try saying: "Send 500 to bob@gmail.com" or "Go to jars"</span>`;
+    fallbackArea.style.display = 'block';
+  }
+}
+
+

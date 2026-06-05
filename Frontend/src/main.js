@@ -14,7 +14,7 @@
 import { store, logout } from './store.js';
 import { apiFetch } from './api.js';
 import { goto } from './router.js';
-import { isDemoMode, setDemoMode, showMyQrModal, showChangePinModal, showEditProfileModal } from './utils.js';
+import { isDemoMode, setDemoMode, showMyQrModal, showChangePinModal, showEditProfileModal, showVoicePayOverlay } from './utils.js';
 import { 
   updateNotificationBadge, 
   renderNotificationsList, 
@@ -45,6 +45,10 @@ const USER_DESKTOP_NAV = `
   <button id="nav-bills" class="nav-btn">
     <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M19 4v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
     <span>Bills</span>
+  </button>
+  <button id="nav-jars" class="nav-btn">
+    <span style="font-size: 14px; margin-right: 6px; display: inline-block;">🔮</span>
+    <span>Piggy Jars</span>
   </button>
   <button id="nav-history" class="nav-btn">
     <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
@@ -140,6 +144,7 @@ if (mainNav) {
     else if (id === 'nav-topup') goto('topup');
     else if (id === 'nav-upload') goto('upload');
     else if (id === 'nav-bills') goto('bills');
+    else if (id === 'nav-jars') goto('jars');
     else if (id === 'nav-history') goto('history');
     else if (id === 'nav-admin-users') {
       window.__currentAdminTab = 'users';
@@ -310,6 +315,14 @@ if (btnNotifications && notificationsDropdown) {
       markAsRead();
       renderNotificationsList();
     }
+  });
+}
+
+const btnVoice = document.getElementById('btn-voice-assistant');
+if (btnVoice) {
+  btnVoice.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showVoicePayOverlay();
   });
 }
 
