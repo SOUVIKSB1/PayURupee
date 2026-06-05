@@ -1026,6 +1026,14 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
       return;
     }
 
+    let upiPin;
+    try {
+      upiPin = await showVerifyPinModal();
+    } catch (cancelErr) {
+      showToast('Payment cancelled', 'info');
+      return;
+    }
+
     payBtn.disabled = true;
     payBtn.textContent = 'Paying...';
 
@@ -1033,7 +1041,7 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
       const result = await apiFetch('/wallet/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ toEmail: contact.email, amount, note })
+        body: JSON.stringify({ toEmail: contact.email, amount, note, upiPin })
       });
 
       showToast(`Successfully paid ₹${amount.toFixed(2)} to ${contact.name || contact.email}`, 'success');
@@ -1067,7 +1075,7 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
     }
 
     const msg = `Requested ₹${amount.toFixed(2)}`;
-    saveLocalMessage(msg, true);
+    saveLocalMessage(msg, true, amount);
     
     amtInput.value = '';
     reqPanel.style.display = 'none';
@@ -1091,13 +1099,14 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
     }
   });
 
-  const msgKey = `chat_msg_${store.user._id}_${contact.email}`;
-  function saveLocalMessage(text, isRequest = false) {
+  const msgKey = `chat_msg_${[store.user.email, contact.email].sort().join('_')}`;
+  function saveLocalMessage(text, isRequest = false, amount = 0) {
     const history = JSON.parse(localStorage.getItem(msgKey) || '[]');
     history.push({
       id: 'msg_' + Date.now(),
       text,
       isRequest,
+      amount,
       sender: store.user.email,
       timestamp: new Date().toISOString()
     });
@@ -1171,6 +1180,7 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
         } else {
           const msg = item.data;
           const isMine = msg.sender === store.user.email;
+          const isRecvRequest = msg.isRequest && !isMine;
           
           const bubble = document.createElement('div');
           bubble.style.alignSelf = isMine ? 'flex-end' : 'flex-start';
@@ -1187,8 +1197,31 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
           bubble.innerHTML = `
             ${msg.isRequest ? `<div style="font-size:10px; font-weight:700; color:#7c5cff; margin-bottom:2px;">MONEY REQUEST</div>` : ''}
             <div style="font-size:12.5px; color:#fff; word-break:break-word;">${escapeHtml(msg.text)}</div>
+            ${isRecvRequest ? `
+              <div style="margin-top: 8px;">
+                <button class="btn btn-pay-request" data-amount="${msg.amount || 0}" style="padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; background: #ff7a00; color: #fff; border: none; cursor: pointer;">Pay Now</button>
+              </div>
+            ` : ''}
             <div style="font-size:9.5px; color:var(--muted); text-align:right; margin-top:4px;">${dateStr}</div>
           `;
+          
+          if (isRecvRequest) {
+            const payRequestBtn = bubble.querySelector('.btn-pay-request');
+            payRequestBtn.addEventListener('click', () => {
+              // Hide request panel if open
+              reqPanel.style.display = 'none';
+              // Open send panel
+              sendPanel.style.display = 'block';
+              // Populate inputs
+              const amtInput = drawer.querySelector('#drawer-send-amount');
+              const noteInput = drawer.querySelector('#drawer-send-note');
+              amtInput.value = msg.amount || '';
+              noteInput.value = `Paying request: ${msg.text}`;
+              // Focus
+              amtInput.focus();
+            });
+          }
+          
           chatListEl.appendChild(bubble);
         }
       });
