@@ -321,6 +321,9 @@ export async function attemptForceDeposit(amount, note = '', retries = 3, initia
       });
       return res;
     } catch (e) {
+      if (e.status >= 400 && e.status < 500) {
+        throw e; // Do not retry client validation errors (e.g. daily limit exceeded)
+      }
       lastErr = e;
       attempt++;
       if (attempt >= retries) break;

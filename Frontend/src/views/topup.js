@@ -125,10 +125,14 @@ export function renderTopUp() {
 
           showToast(errMsg, 'err');
           msg.innerHTML = `
-            <div style="color: #ff5c6c; font-weight: 700; line-height: 1.4;">
-              ${escapeHtml(errMsg)}
-              <div style="margin-top: 8px; font-size: 13px; color: var(--accent1); background: rgba(255, 122, 0, 0.08); border: 1px solid rgba(255, 122, 0, 0.2); border-radius: 8px; padding: 8px 12px; display: inline-block;">
-                Remaining top-up allowance today: <strong>₹${maxRemaining.toFixed(2)}</strong>
+            <div style="background: rgba(255, 92, 108, 0.08); border: 1px solid rgba(255, 92, 108, 0.2); border-radius: 12px; padding: 14px 16px; margin-top: 16px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; text-align: left; box-sizing: border-box; width: 100%;">
+              <div style="display: flex; gap: 8px; align-items: flex-start; color: #ff5c6c; font-weight: 700; font-size: 14px; line-height: 1.4;">
+                <span style="font-size: 16px; flex-shrink: 0;">⚠️</span>
+                <span>${escapeHtml(errMsg)}</span>
+              </div>
+              <div style="font-size: 12.5px; color: var(--accent1); background: rgba(255, 122, 0, 0.06); border: 1px solid rgba(255, 122, 0, 0.2); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; gap: 6px; width: 100%; box-sizing: border-box;">
+                <span style="flex-shrink: 0;">ℹ️</span>
+                <span>Remaining top-up allowance today: <strong>₹${maxRemaining.toFixed(2)}</strong></span>
               </div>
             </div>
           `;
