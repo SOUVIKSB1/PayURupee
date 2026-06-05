@@ -1128,9 +1128,10 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
     </div>
 
     <!-- Quick Action Section -->
-    <div style="display:flex; gap:12px; margin-bottom:16px;">
+    <div style="display:flex; gap:8px; margin-bottom:16px;">
       <button class="btn primary" id="drawer-btn-send" style="flex:1; padding:10px; font-weight:700; border-radius:10px; font-size:13px;">Send Money</button>
       <button class="btn ghost" id="drawer-btn-request" style="flex:1; padding:10px; font-weight:700; border-radius:10px; border-color:rgba(255,255,255,0.08); color:#fff; font-size:13px;">Request</button>
+      <button class="btn ghost" id="drawer-btn-schedule" style="flex:0 0 auto; padding:10px 12px; font-weight:700; border-radius:10px; border-color:rgba(255,255,255,0.08); color:#fff; font-size:13px;" title="Schedule Payment">⏰</button>
     </div>
 
     <!-- Send money panel inside drawer (collapsible) -->
@@ -1221,6 +1222,16 @@ export async function showContactDrawer(contact, color = '#ff7a00') {
       drawer.querySelector('#drawer-req-amount').focus();
     }
   });
+
+  // Feature 2: Schedule Payment button in drawer
+  const btnSchedule = drawer.querySelector('#drawer-btn-schedule');
+  if (btnSchedule) {
+    btnSchedule.addEventListener('click', () => {
+      overlay.remove();
+      clearInterval(refreshInterval);
+      showSchedulePaymentModal(contact, color);
+    });
+  }
 
   drawer.querySelector('#drawer-send-cancel').addEventListener('click', () => {
     sendPanel.style.display = 'none';
@@ -2227,4 +2238,658 @@ export function showEditProfileModal() {
 }
 
 
+/* ═══════════════════════════════════════════════════════════════
+   FEATURE 1 ── Smart Spending Insights
+   Renders an animated financial health card on the dashboard.
+   ═══════════════════════════════════════════════════════════════ */
+export function renderSpendingInsights(txList, containerId = 'spending-insights-container') {
+  const el = document.getElementById(containerId);
+  if (!el || !txList || txList.length === 0) return;
+
+  const userId = store.user?._id || store.user?.id;
+  const userEmail = store.user?.email;
+
+  // ── Calculate spending breakdown ──
+  let totalSent = 0, totalReceived = 0, totalBills = 0;
+  const now = new Date();
+  const weekAgo = new Date(now - 7 * 86400000);
+  const twoWeeksAgo = new Date(now - 14 * 86400000);
+  let thisWeekSpent = 0, lastWeekSpent = 0;
+
+  // Streak calculation
+  const txDays = new Set();
+  txList.forEach(tx => {
+    const d = new Date(tx.createdAt);
+    txDays.add(d.toDateString());
+    const fromId = tx.from && typeof tx.from === 'object' ? tx.from._id : tx.from;
+    const isSender = String(fromId) === String(userId);
+    const isDebit = tx.type === 'bill' || (tx.type === 'send' && isSender);
+    const isCredit = !isSender && tx.type === 'send';
+
+    if (tx.type === 'bill') {
+      totalBills += tx.amount;
+      if (d >= weekAgo) thisWeekSpent += tx.amount;
+      if (d >= twoWeeksAgo && d < weekAgo) lastWeekSpent += tx.amount;
+    } else if (tx.type === 'send' && isSender) {
+      totalSent += tx.amount;
+      if (d >= weekAgo) thisWeekSpent += tx.amount;
+      if (d >= twoWeeksAgo && d < weekAgo) lastWeekSpent += tx.amount;
+    } else if (!isSender && (tx.type === 'send' || tx.type === 'topup' || tx.type === 'deposit')) {
+      totalReceived += tx.amount;
+    }
+  });
+
+  const total = totalSent + totalReceived + totalBills || 1;
+  const sentPct  = Math.round((totalSent  / total) * 100);
+  const recvPct  = Math.round((totalReceived / total) * 100);
+  const billsPct = Math.round((totalBills / total) * 100);
+
+  // Week comparison
+  const weekDiff = lastWeekSpent > 0
+    ? Math.round(((thisWeekSpent - lastWeekSpent) / lastWeekSpent) * 100)
+    : null;
+  const weekLabel = weekDiff === null ? 'First week of data'
+    : weekDiff > 0 ? `↑ ${weekDiff}% more spent this week`
+    : weekDiff < 0 ? `↓ ${Math.abs(weekDiff)}% less spent this week`
+    : '= Same as last week';
+  const weekColor = weekDiff > 0 ? '#ff5c6c' : '#00d26a';
+
+  // Streak
+  let streak = 0;
+  let d = new Date();
+  d.setHours(0,0,0,0);
+  while (txDays.has(d.toDateString())) {
+    streak++;
+    d = new Date(d - 86400000);
+  }
+
+  // Dominant category
+  const dominant = totalSent >= totalBills && totalSent >= totalReceived ? { label: '📤 Transfers', color: '#ff7a00' }
+    : totalBills >= totalReceived ? { label: '⚡ Bills', color: '#7c5cff' }
+    : { label: '📥 Received', color: '#00d26a' };
+
+  // Conic gradient for ring chart
+  const s = sentPct, b = billsPct, r = 100 - s - b;
+  const conicGrad = `conic-gradient(#ff7a00 0% ${s}%, #7c5cff ${s}% ${s + b}%, #00d26a ${s + b}% 100%)`;
+
+  el.innerHTML = `
+    <div class="insights-card" id="insights-card-inner">
+      <div class="insights-header">
+        <div>
+          <div class="insights-title">💡 Spending Insights</div>
+          <div class="insights-subtitle">${txList.length} transactions analysed</div>
+        </div>
+        <div class="insights-streak">
+          🔥 <span class="insights-streak-num">${streak}</span>
+          <span class="insights-streak-label">day streak</span>
+        </div>
+      </div>
+
+      <div class="insights-body">
+        <!-- Ring chart -->
+        <div class="insights-ring-wrap">
+          <div class="insights-ring" style="background: ${conicGrad}">
+            <div class="insights-ring-inner">
+              <div class="insights-ring-label">${dominant.label}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Legend + stats -->
+        <div class="insights-stats">
+          <div class="insights-legend">
+            <div class="insights-legend-item">
+              <span class="insights-dot" style="background:#ff7a00"></span>
+              <span>Sent</span>
+              <strong class="insights-pct">${sentPct}%</strong>
+            </div>
+            <div class="insights-legend-item">
+              <span class="insights-dot" style="background:#7c5cff"></span>
+              <span>Bills</span>
+              <strong class="insights-pct">${billsPct}%</strong>
+            </div>
+            <div class="insights-legend-item">
+              <span class="insights-dot" style="background:#00d26a"></span>
+              <span>Received</span>
+              <strong class="insights-pct">${recvPct}%</strong>
+            </div>
+          </div>
+
+          <div class="insights-week-stat" style="color:${weekColor}">
+            ${weekLabel}
+          </div>
+
+          <div class="insights-amounts">
+            <div class="insights-amount-item">
+              <div class="insights-amount-label">Total Out</div>
+              <div class="insights-amount-val" style="color:#ff5c6c">${formatCurrency(totalSent + totalBills)}</div>
+            </div>
+            <div class="insights-amount-item">
+              <div class="insights-amount-label">Total In</div>
+              <div class="insights-amount-val" style="color:#00d26a">${formatCurrency(totalReceived)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   FEATURE 2 ── Schedule a Payment
+   Shows a modal to schedule a future/recurring transfer.
+   ═══════════════════════════════════════════════════════════════ */
+export function showSchedulePaymentModal(contact, color = '#ff7a00') {
+  // Remove existing
+  document.getElementById('schedule-modal-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'schedule-modal-overlay';
+  overlay.className = 'bottom-sheet-overlay';
+
+  const modal = document.createElement('div');
+  modal.className = 'bottom-sheet-modal schedule-modal';
+
+  const initial = String(contact.name || contact.email || '?').charAt(0).toUpperCase();
+  const minDate = new Date(Date.now() + 60000).toISOString().slice(0, 16); // at least 1 min from now
+
+  modal.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:38px;height:38px;border-radius:50%;background:${color}22;border:1.5px solid ${color};color:${color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;">${initial}</div>
+        <div>
+          <div style="font-weight:700;color:#fff;font-size:15px;">Schedule Payment</div>
+          <div style="font-size:11px;color:var(--muted);">${escapeHtml(contact.name || contact.email)}</div>
+        </div>
+      </div>
+      <button id="sch-close" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;">&times;</button>
+    </div>
+
+    <!-- Type toggle -->
+    <div class="sch-type-row">
+      <button class="sch-type-btn active" id="sch-type-once">⏰ One-Time</button>
+      <button class="sch-type-btn" id="sch-type-weekly">🔁 Weekly</button>
+      <button class="sch-type-btn" id="sch-type-monthly">📅 Monthly</button>
+    </div>
+
+    <!-- Amount + Note -->
+    <div style="display:flex;gap:10px;margin:16px 0 10px;">
+      <input type="number" id="sch-amount" class="input" placeholder="Amount (₹)" style="flex:1;margin:0;" min="1" />
+      <input type="text"   id="sch-note"   class="input" placeholder="Note (optional)" style="flex:1.5;margin:0;" />
+    </div>
+
+    <!-- Date/time picker (for one-time) -->
+    <div id="sch-date-wrap" style="margin-bottom:10px;">
+      <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">SCHEDULE DATE & TIME</label>
+      <input type="datetime-local" id="sch-datetime" class="input" style="margin:0;width:100%;" min="${minDate}" />
+    </div>
+
+    <!-- Day picker (for recurring) -->
+    <div id="sch-day-wrap" style="display:none;margin-bottom:10px;">
+      <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">DAY OF WEEK / MONTH</label>
+      <input type="number" id="sch-day" class="input" placeholder="e.g. 1 = Monday / 1st of month" style="margin:0;width:100%;" min="1" max="31" />
+    </div>
+
+    <div id="sch-error" style="color:#ff5c6c;font-size:12px;min-height:16px;margin-bottom:8px;"></div>
+
+    <button class="btn primary" id="sch-submit" style="width:100%;padding:13px;font-weight:700;font-size:14px;">
+      <span>Schedule Payment</span>
+    </button>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  // Animate in
+  requestAnimationFrame(() => { modal.style.transform = 'translateY(0)'; modal.style.opacity = '1'; });
+
+  const errorEl  = modal.querySelector('#sch-error');
+  const dateWrap = modal.querySelector('#sch-date-wrap');
+  const dayWrap  = modal.querySelector('#sch-day-wrap');
+  let scheduleType = 'once';
+
+  // Close
+  const close = () => { overlay.style.opacity = '0'; setTimeout(() => overlay.remove(), 250); };
+  modal.querySelector('#sch-close').onclick = close;
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+
+  // Type toggle
+  modal.querySelectorAll('.sch-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      modal.querySelectorAll('.sch-type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      scheduleType = btn.id === 'sch-type-once' ? 'once' : btn.id === 'sch-type-weekly' ? 'weekly' : 'monthly';
+      dateWrap.style.display = scheduleType === 'once'  ? 'block' : 'none';
+      dayWrap.style.display  = scheduleType !== 'once' ? 'block' : 'none';
+      modal.querySelector('#sch-day').placeholder = scheduleType === 'weekly'
+        ? '1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat 7=Sun'
+        : '1–31 (day of month)';
+    });
+  });
+
+  // Submit
+  modal.querySelector('#sch-submit').addEventListener('click', () => {
+    const amount = Number(modal.querySelector('#sch-amount').value);
+    const note   = modal.querySelector('#sch-note').value.trim();
+    errorEl.textContent = '';
+
+    if (!amount || amount <= 0) { errorEl.textContent = 'Enter a valid amount'; return; }
+
+    let executeAt = null;
+    let dayValue  = null;
+
+    if (scheduleType === 'once') {
+      const dtVal = modal.querySelector('#sch-datetime').value;
+      if (!dtVal) { errorEl.textContent = 'Pick a date and time'; return; }
+      executeAt = new Date(dtVal).toISOString();
+      if (new Date(executeAt) <= new Date()) { errorEl.textContent = 'Pick a future date'; return; }
+    } else {
+      dayValue = Number(modal.querySelector('#sch-day').value);
+      if (!dayValue || dayValue < 1) { errorEl.textContent = 'Enter a valid day'; return; }
+      if (scheduleType === 'weekly' && dayValue > 7) { errorEl.textContent = '1–7 for weekly'; return; }
+      if (scheduleType === 'monthly' && dayValue > 31) { errorEl.textContent = '1–31 for monthly'; return; }
+    }
+
+    // Persist to localStorage
+    const userId = store.user?._id || store.user?.id || store.user?.email;
+    const key = `payurupee_scheduled_${userId}`;
+    const scheduled = JSON.parse(localStorage.getItem(key) || '[]');
+    const entry = {
+      id: Date.now().toString(),
+      contactEmail: contact.email,
+      contactName: contact.name || contact.email,
+      amount,
+      note,
+      type: scheduleType,
+      executeAt,
+      dayValue,
+      color,
+      createdAt: new Date().toISOString(),
+      lastExecuted: null
+    };
+    scheduled.push(entry);
+    localStorage.setItem(key, JSON.stringify(scheduled));
+
+    showToast(`Payment scheduled for ${contact.name || contact.email}`, 'ok');
+    close();
+
+    // Refresh upcoming payments card
+    renderUpcomingPaymentsCard();
+  });
+}
+
+/**
+ * Check all scheduled payments and execute any that are due.
+ * Called from the dashboard poll interval every 8s.
+ */
+export async function checkScheduledPayments() {
+  if (!store.user) return;
+  const userId = store.user?._id || store.user?.id || store.user?.email;
+  const key = `payurupee_scheduled_${userId}`;
+  const scheduled = JSON.parse(localStorage.getItem(key) || '[]');
+  if (scheduled.length === 0) return;
+
+  const now = new Date();
+  let changed = false;
+
+  for (const entry of scheduled) {
+    let isDue = false;
+    if (entry.type === 'once') {
+      isDue = entry.executeAt && !entry.lastExecuted && new Date(entry.executeAt) <= now;
+    } else if (entry.type === 'weekly') {
+      // 1=Mon … 7=Sun, JS: 0=Sun…6=Sat
+      const jsDay = now.getDay() || 7; // convert 0→7
+      const todayStr = now.toDateString();
+      isDue = jsDay === entry.dayValue && entry.lastExecuted !== todayStr;
+    } else if (entry.type === 'monthly') {
+      const todayStr = now.toDateString();
+      isDue = now.getDate() === entry.dayValue && entry.lastExecuted !== todayStr;
+    }
+
+    if (!isDue) continue;
+
+    try {
+      const pin = store.user?.upiPin; // won't have pin here — skip auto if pin required
+      // Execute via API
+      const res = await apiFetch('/wallet/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          toEmail: entry.contactEmail,
+          amount: entry.amount,
+          note: entry.note || 'Scheduled payment',
+          upiPin: store._scheduledPin || ''
+        })
+      });
+      changed = true;
+      entry.lastExecuted = entry.type === 'once' ? 'done' : now.toDateString();
+      showToast(`⏰ Scheduled payment of ${formatCurrency(entry.amount)} sent to ${entry.contactName}`, 'ok');
+
+      // Fire notification
+      const { addNotification } = await import('./notifications.js');
+      addNotification(`⏰ Scheduled payment of ${formatCurrency(entry.amount)} sent to ${entry.contactName}`, 'info');
+    } catch (err) {
+      // If UPI pin needed, mark pending and notify user
+      if (err.message && err.message.toLowerCase().includes('pin')) {
+        showToast(`⏰ Scheduled payment to ${entry.contactName} needs your UPI PIN — pay manually`, 'err');
+      }
+    }
+  }
+
+  // Remove completed one-time entries
+  const remaining = scheduled.filter(e => !(e.type === 'once' && e.lastExecuted === 'done'));
+  if (changed || remaining.length !== scheduled.length) {
+    localStorage.setItem(key, JSON.stringify(remaining));
+    renderUpcomingPaymentsCard();
+  }
+}
+
+/** Render the upcoming scheduled payments mini-card on the dashboard */
+export function renderUpcomingPaymentsCard() {
+  const el = document.getElementById('upcoming-payments-card');
+  if (!el) return;
+  const userId = store.user?._id || store.user?.id || store.user?.email;
+  const key = `payurupee_scheduled_${userId}`;
+  const scheduled = JSON.parse(localStorage.getItem(key) || '[]');
+
+  if (scheduled.length === 0) {
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = 'block';
+
+  const now = new Date();
+  const rows = scheduled.map(e => {
+    let whenStr = '';
+    if (e.type === 'once') {
+      const dt = new Date(e.executeAt);
+      const diff = dt - now;
+      if (diff > 0) {
+        const hrs = Math.floor(diff / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        whenStr = hrs > 48 ? dt.toLocaleDateString() : hrs > 0 ? `in ${hrs}h ${mins}m` : `in ${mins}m`;
+      } else { whenStr = 'Executing...'; }
+    } else if (e.type === 'weekly') {
+      const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      whenStr = `Every ${days[(e.dayValue - 1) % 7]}`;
+    } else {
+      whenStr = `Every ${e.dayValue}${e.dayValue === 1 ? 'st' : e.dayValue === 2 ? 'nd' : e.dayValue === 3 ? 'rd' : 'th'}`;
+    }
+
+    return `
+      <div class="upcoming-payment-row">
+        <div class="upcoming-payment-info">
+          <div class="upcoming-payment-avatar" style="background:${e.color}22;border-color:${e.color};color:${e.color};">
+            ${String(e.contactName || '?').charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div class="upcoming-payment-name">${escapeHtml(e.contactName)}</div>
+            <div class="upcoming-payment-when">${whenStr}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="upcoming-payment-amount">${formatCurrency(e.amount)}</div>
+          <button class="upcoming-cancel-btn" data-id="${e.id}" title="Cancel">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="paytm-section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <h3 style="margin:0;">⏰ Upcoming Payments</h3>
+        <span class="upcoming-count-badge">${scheduled.length}</span>
+      </div>
+      <div id="upcoming-payment-list">${rows}</div>
+    </div>
+  `;
+
+  // Cancel buttons
+  el.querySelectorAll('.upcoming-cancel-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      const key2 = `payurupee_scheduled_${userId}`;
+      const list = JSON.parse(localStorage.getItem(key2) || '[]').filter(e => e.id !== id);
+      localStorage.setItem(key2, JSON.stringify(list));
+      renderUpcomingPaymentsCard();
+      showToast('Scheduled payment cancelled', 'ok');
+    });
+  });
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   FEATURE 3 ── Split Bill with Group
+   Modal to split a total amount across multiple contacts.
+   ═══════════════════════════════════════════════════════════════ */
+export function showSplitBillModal(allContacts = []) {
+  document.getElementById('split-bill-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'split-bill-overlay';
+  overlay.className = 'bottom-sheet-overlay';
+
+  const modal = document.createElement('div');
+  modal.className = 'bottom-sheet-modal split-bill-modal';
+
+  const colors = ['#ff7a00','#00a2ff','#00d26a','#7c5cff','#e60072','#ffbc00'];
+
+  modal.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div>
+        <div style="font-weight:800;color:#fff;font-size:18px;">🎯 Split Bill</div>
+        <div style="font-size:12px;color:var(--muted);">Request money from multiple people at once</div>
+      </div>
+      <button id="split-close" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;">&times;</button>
+    </div>
+
+    <!-- Total amount + note -->
+    <div style="display:flex;gap:10px;margin-bottom:14px;">
+      <div style="flex:1;">
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">TOTAL AMOUNT (₹)</label>
+        <input type="number" id="split-total" class="input" placeholder="e.g. 1500" style="margin:0;width:100%;" min="1"/>
+      </div>
+      <div style="flex:1.5;">
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">NOTE</label>
+        <input type="text" id="split-note" class="input" placeholder="e.g. Dinner at La Piazza" style="margin:0;width:100%;"/>
+      </div>
+    </div>
+
+    <!-- Split type -->
+    <div class="sch-type-row" style="margin-bottom:14px;">
+      <button class="sch-type-btn active" id="split-equal">⚖️ Equal Split</button>
+      <button class="sch-type-btn" id="split-custom">✏️ Custom</button>
+    </div>
+
+    <!-- Contact picker -->
+    <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:8px;">SELECT PEOPLE</label>
+    <div id="split-contact-grid" class="split-contact-grid">
+      ${allContacts.map((c, i) => {
+        const init = String(c.name || c.email || '?').charAt(0).toUpperCase();
+        const col = colors[i % colors.length];
+        return `
+          <div class="split-contact-chip" data-email="${escapeHtml(c.email)}" data-name="${escapeHtml(c.name || c.email)}" data-color="${col}">
+            <div class="split-chip-avatar" style="background:${col}22;border-color:${col};color:${col};">${init}</div>
+            <div class="split-chip-name">${escapeHtml(c.name ? c.name.split(' ')[0] : c.email.split('@')[0])}</div>
+            <div class="split-chip-check">✓</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+
+    <!-- Selected pills + per-person amount preview -->
+    <div id="split-selected-area" style="margin-top:14px;"></div>
+
+    <div id="split-error" style="color:#ff5c6c;font-size:12px;min-height:16px;margin:8px 0;"></div>
+
+    <button class="btn primary" id="split-submit" style="width:100%;padding:13px;font-weight:700;font-size:14px;margin-top:4px;">
+      <span>Send Requests</span>
+    </button>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => { modal.style.transform = 'translateY(0)'; modal.style.opacity = '1'; });
+
+  const errorEl = modal.querySelector('#split-error');
+  let selectedEmails = new Set();
+  let customAmounts  = {}; // email -> amount
+  let isCustom = false;
+
+  const close = () => { overlay.style.opacity = '0'; setTimeout(() => overlay.remove(), 250); };
+  modal.querySelector('#split-close').onclick = close;
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+
+  // Split type toggle
+  modal.querySelector('#split-equal').addEventListener('click', () => {
+    modal.querySelector('#split-equal').classList.add('active');
+    modal.querySelector('#split-custom').classList.remove('active');
+    isCustom = false;
+    updateSelectedArea();
+  });
+  modal.querySelector('#split-custom').addEventListener('click', () => {
+    modal.querySelector('#split-custom').classList.add('active');
+    modal.querySelector('#split-equal').classList.remove('active');
+    isCustom = true;
+    updateSelectedArea();
+  });
+
+  // Contact chip toggle
+  modal.querySelectorAll('.split-contact-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const email = chip.dataset.email;
+      if (selectedEmails.has(email)) {
+        selectedEmails.delete(email);
+        chip.classList.remove('selected');
+      } else {
+        selectedEmails.add(email);
+        chip.classList.add('selected');
+      }
+      updateSelectedArea();
+    });
+  });
+
+  function getPerPerson() {
+    const total = Number(modal.querySelector('#split-total').value) || 0;
+    const count = selectedEmails.size;
+    return count > 0 ? Math.round((total / count) * 100) / 100 : 0;
+  }
+
+  function updateSelectedArea() {
+    const area = modal.querySelector('#split-selected-area');
+    const total = Number(modal.querySelector('#split-total').value) || 0;
+    const perPerson = getPerPerson();
+    const contacts = allContacts.filter(c => selectedEmails.has(c.email));
+
+    if (contacts.length === 0) {
+      area.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px 0;">Select at least one person</div>';
+      return;
+    }
+
+    const pillsHtml = contacts.map(c => {
+      const col = colors[allContacts.indexOf(c) % colors.length];
+      const amt = isCustom ? (customAmounts[c.email] || '') : perPerson;
+      return `
+        <div class="split-selected-pill">
+          <span class="split-pill-dot" style="background:${col};"></span>
+          <span class="split-pill-name">${escapeHtml(c.name ? c.name.split(' ')[0] : c.email.split('@')[0])}</span>
+          ${isCustom
+            ? `<input type="number" class="split-custom-input" data-email="${c.email}" placeholder="₹" value="${customAmounts[c.email] || ''}" min="1" />`
+            : `<span class="split-pill-amount">${formatCurrency(perPerson)}</span>`
+          }
+          <button class="split-pill-remove" data-email="${c.email}">✕</button>
+        </div>
+      `;
+    }).join('');
+
+    area.innerHTML = `
+      <div class="split-pills-wrap">${pillsHtml}</div>
+      ${!isCustom && total > 0 ? `<div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;">Each person owes <strong style="color:#fff;">${formatCurrency(perPerson)}</strong></div>` : ''}
+    `;
+
+    // Custom amount inputs
+    area.querySelectorAll('.split-custom-input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        customAmounts[inp.dataset.email] = Number(inp.value);
+      });
+    });
+
+    // Remove pills
+    area.querySelectorAll('.split-pill-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const email = btn.dataset.email;
+        selectedEmails.delete(email);
+        modal.querySelectorAll(`.split-contact-chip[data-email="${email}"]`).forEach(c => c.classList.remove('selected'));
+        delete customAmounts[email];
+        updateSelectedArea();
+      });
+    });
+  }
+
+  // Re-compute when amount changes
+  modal.querySelector('#split-total').addEventListener('input', updateSelectedArea);
+
+  // Submit
+  modal.querySelector('#split-submit').addEventListener('click', async () => {
+    errorEl.textContent = '';
+    const total = Number(modal.querySelector('#split-total').value);
+    const note  = modal.querySelector('#split-note').value.trim();
+
+    if (!total || total <= 0) { errorEl.textContent = 'Enter a total amount'; return; }
+    if (selectedEmails.size === 0) { errorEl.textContent = 'Select at least one person'; return; }
+
+    const btn = modal.querySelector('#split-submit');
+    btn.disabled = true;
+    btn.querySelector('span').textContent = 'Sending requests…';
+
+    try {
+      const recipients = [...selectedEmails];
+      const splitAmounts = {};
+
+      if (isCustom) {
+        let customTotal = 0;
+        for (const email of recipients) {
+          const amt = Number(customAmounts[email] || 0);
+          if (!amt) { errorEl.textContent = `Enter amount for ${email}`; btn.disabled = false; btn.querySelector('span').textContent = 'Send Requests'; return; }
+          splitAmounts[email] = amt;
+          customTotal += amt;
+        }
+      } else {
+        const pp = Math.round((total / recipients.length) * 100) / 100;
+        recipients.forEach(e => splitAmounts[e] = pp);
+      }
+
+      // Send one bulk request per unique amount (group by amount)
+      // For simplicity, send each as individual
+      let successCount = 0;
+      for (const email of recipients) {
+        const perAmt = isCustom ? splitAmounts[email] : Math.round((total / recipients.length) * 100) / 100;
+        const contactName = allContacts.find(c => c.email === email)?.name || email;
+        const msgText = note ? `Split: ${note} — your share` : `Split bill — your share`;
+
+        try {
+          await apiFetch('/chat/send-bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              recipients: [email],
+              text: msgText,
+              amount: perAmt
+            })
+          });
+          successCount++;
+        } catch (e) { /* silent per-contact */ }
+      }
+
+      close();
+      showToast(`💸 Split request sent to ${successCount} ${successCount === 1 ? 'person' : 'people'}!`, 'ok');
+    } catch (err) {
+      errorEl.textContent = err.message || 'Failed to send requests';
+      btn.disabled = false;
+      btn.querySelector('span').textContent = 'Send Requests';
+    }
+  });
+}
 

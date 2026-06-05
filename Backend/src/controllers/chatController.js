@@ -102,4 +102,48 @@ const markMessagesRead = async (req, res) => {
   res.json({ message: 'Messages marked as read' });
 };
 
-module.exports = { sendChatMessage, getChatHistory, getUnreadMessages, markMessagesRead };
+/**
+ * POST /chat/send-bulk
+ * Sends a money request to multiple recipients simultaneously (Split Bill feature).
+ * Body: { recipients: [email], text, amount }
+ */
+const sendBulkChatMessages = async (req, res) => {
+  const senderEmail = req.user.email;
+  const { recipients, text, amount } = req.body;
+
+  if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+    return res.status(400).json({ message: 'recipients array is required' });
+  }
+  if (!text || !amount) {
+    return res.status(400).json({ message: 'text and amount are required' });
+  }
+
+  const results = [];
+  const errors = [];
+
+  for (const recipientEmail of recipients) {
+    try {
+      const recipient = await User.findOne({ email: recipientEmail.toLowerCase().trim() });
+      if (!recipient) {
+        errors.push({ email: recipientEmail, error: 'User not found' });
+        continue;
+      }
+      const msg = new ChatMessage({
+        sender: senderEmail,
+        recipient: recipient.email,
+        text,
+        isRequest: true,
+        amount: Number(amount),
+        read: false
+      });
+      await msg.save();
+      results.push({ email: recipientEmail, messageId: msg._id });
+    } catch (err) {
+      errors.push({ email: recipientEmail, error: err.message });
+    }
+  }
+
+  res.status(201).json({ sent: results, errors, total: results.length });
+};
+
+module.exports = { sendChatMessage, getChatHistory, getUnreadMessages, markMessagesRead, sendBulkChatMessages };

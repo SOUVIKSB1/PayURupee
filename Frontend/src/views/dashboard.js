@@ -1,7 +1,7 @@
 import { apiFetch } from '../api.js';
 import { store } from '../store.js';
 import { goto } from '../router.js';
-import { escapeHtml, formatCurrency, showMyQrModal, triggerCoinRain, showScratchCardModal, showToast, showContactDrawer, showSetPinModal } from '../utils.js';
+import { escapeHtml, formatCurrency, showMyQrModal, triggerCoinRain, showScratchCardModal, showToast, showContactDrawer, showSetPinModal, renderSpendingInsights, showSchedulePaymentModal, renderUpcomingPaymentsCard, checkScheduledPayments, showSplitBillModal } from '../utils.js';
 import { addNotification } from '../notifications.js';
 
 // Live count-up animation helper function
@@ -129,9 +129,13 @@ export async function renderDashboard() {
             </div>
           </div>
           
+          </div>
           <!-- People & Contacts (GPay Style) -->
           <div class="paytm-section" id="contacts-section" style="display: none;">
-            <h3>People</h3>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <h3 style="margin:0;">People</h3>
+              <button class="small-btn solid" id="btn-split-bill" style="padding:5px 12px;font-size:11px;font-weight:700;">🎯 Split Bill</button>
+            </div>
             <div id="contacts-grid" style="display: flex; gap: 16px; overflow-x: auto; padding: 8px 4px 12px; scrollbar-width: none; -ms-overflow-style: none;">
               <!-- Loaded dynamically -->
             </div>
@@ -144,12 +148,18 @@ export async function renderDashboard() {
               <div class="smallmuted" style="grid-column: span 4; padding: 12px 0;">Loading utilities...</div>
             </div>
           </div>
+
+          <!-- Spending Insights Card (Feature 1) -->
+          <div id="spending-insights-container"></div>
         </div>
         
         <!-- Right Column: Sidebar summaries -->
         <div class="dashboard-side-col">
           <!-- Admin Panel Section (Only visible to admin) -->
           <div id="admin-section-container"></div>
+
+          <!-- Upcoming Scheduled Payments (Feature 2) -->
+          <div id="upcoming-payments-card" style="display:none;"></div>
           
           <!-- Recent Transactions Section -->
           <div class="paytm-section">
@@ -359,6 +369,9 @@ export async function renderDashboard() {
         if (typeof updateUnreadDots === 'function') {
           updateUnreadDots(unreadList);
         }
+
+        // Feature 2: Check scheduled payments
+        checkScheduledPayments().catch(() => {});
       } catch (err) {
         console.warn('Dashboard poll cycle failed', err);
       }
@@ -575,6 +588,24 @@ export async function renderDashboard() {
         });
 
         transactionsList.appendChild(row);
+      });
+    }
+
+    // Feature 1: Render Spending Insights after transaction data is available
+    const allTxForInsights = historyJson.data || historyJson.history || [];
+    if (allTxForInsights.length >= 3) {
+      renderSpendingInsights(allTxForInsights);
+    }
+
+    // Feature 2: Show upcoming scheduled payments card
+    renderUpcomingPaymentsCard();
+
+    // Feature 3: Bind Split Bill button
+    const splitBtn = document.getElementById('btn-split-bill');
+    if (splitBtn) {
+      splitBtn.addEventListener('click', () => {
+        const contacts = contactsJson.contacts || [];
+        showSplitBillModal(contacts);
       });
     }
 
