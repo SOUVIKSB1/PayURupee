@@ -2607,7 +2607,8 @@ export function showSchedulePaymentModal(contact, color = '#ff7a00') {
       dayValue,
       color,
       createdAt: new Date().toISOString(),
-      lastExecuted: null
+      lastExecuted: null,
+      upiPin: pin
     };
     scheduled.push(entry);
     localStorage.setItem(key, JSON.stringify(scheduled));
@@ -2660,7 +2661,7 @@ export async function checkScheduledPayments() {
           toEmail: entry.contactEmail,
           amount: entry.amount,
           note: entry.note || 'Scheduled payment',
-          upiPin: store._scheduledPin || ''
+          upiPin: entry.upiPin || ''
         })
       });
       changed = true;
