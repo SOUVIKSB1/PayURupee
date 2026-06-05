@@ -1372,6 +1372,7 @@ export function showSetPinModal() {
         try {
           const res = await apiFetch('/users/set-pin', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ pin: pinVal })
           });
           
