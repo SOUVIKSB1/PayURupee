@@ -164,7 +164,26 @@ const toggleBlockUser = async (req, res) => {
     res.status(500).json({ message: err.message || 'Error toggling user block' });
   }
 };
+const deleteUser = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (user.role === 'admin') {
+      return res.status(400).json({ message: 'Cannot delete admin accounts' });
+    }
+    
+    // Perform hard delete
+    await User.findByIdAndDelete(id);
+    
+    // Log audit
+    await logAudit(req.user.email, 'DELETE_USER', `Deleted user account ${user.email} (${user.name})`);
 
+    res.json({ message: 'User deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message || 'Error deleting user account' });
+  }
+};
 const listAuditLogs = async (req, res) => {
   try {
     const logs = await AuditLog.find().sort({ createdAt: -1 }).limit(100).lean();
@@ -184,5 +203,6 @@ module.exports = {
   getSettings,
   updateSettings,
   toggleBlockUser,
+  deleteUser,
   listAuditLogs
 };

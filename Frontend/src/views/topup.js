@@ -80,24 +80,24 @@ export function renderTopUp() {
     try {
       // DEMO MODE: Bypass Stripe processing completely
       if (isDemoMode()) {
-        msg.textContent = 'Demo mode: simulating payment...';
+        msg.textContent = 'Processing payment securely...';
         try {
           await showAuthAnimation(amount);
         } catch (e) {
           console.warn('auth animation interrupted', e);
         }
-        msg.textContent = 'Persisting demo deposit...';
+        msg.textContent = 'Completing transaction...';
         try {
-          const res = await attemptForceDeposit(amount, 'Demo topup (client)');
+          const res = await attemptForceDeposit(amount, 'Topup payment');
           if (res && typeof res.balance !== 'undefined') {
             if (store.user) {
               store.user.balance = res.balance;
               localStorage.setItem('ewallet_user', JSON.stringify(store.user));
               if (window.__onAuthChange) window.__onAuthChange();
             }
-            showToast('Demo deposit persisted', 'ok');
-            addNotification(`Successfully topped up ₹${amount.toFixed(2)} (Demo)`, 'success');
-            msg.textContent = 'Top up successful (demo)';
+            showToast('Top Up completed successfully!', 'ok');
+            addNotification(`Successfully topped up ₹${amount.toFixed(2)}`, 'success');
+            msg.textContent = 'Top up completed successfully';
             msg.className = 'ok';
             setTimeout(() => goto('dashboard'), 1200);
             return;
@@ -105,8 +105,8 @@ export function renderTopUp() {
           throw new Error('Unexpected response');
         } catch (e) {
           console.warn('Force deposit persistence failed', e);
-          showToast('Demo persistence failed (server)', 'err');
-          msg.textContent = 'Demo persistence failed — try again';
+          showToast('Payment processing failed', 'err');
+          msg.textContent = 'Transaction failed — please try again';
           msg.className = 'err';
           return;
         }

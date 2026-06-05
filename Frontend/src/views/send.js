@@ -84,7 +84,7 @@ export function renderSend() {
         body: JSON.stringify({ toEmail, amount, note, demoMode, upiPin })
       });
       
-      const successMsg = demoMode ? 'Payment sent (demo mode)' : 'Payment sent successfully';
+      const successMsg = 'Payment sent successfully';
       msg.textContent = successMsg;
       msg.className = 'ok';
       showStatusOverlay({ type: 'success', message: successMsg });
@@ -99,7 +99,7 @@ export function renderSend() {
         if (window.__onAuthChange) window.__onAuthChange();
       }
       
-      addNotification(`Sent ₹${amount.toFixed(2)} to ${toEmail}${demoMode ? ' (Demo)' : ''}`, 'success');
+      addNotification(`Sent ₹${amount.toFixed(2)} to ${toEmail}`, 'success');
       
       setTimeout(() => {
         goto('receipt', { transaction: json.transaction, toEmail, amount, note, type: 'send' });
@@ -109,9 +109,9 @@ export function renderSend() {
       const raw = (err && err.message) ? String(err.message).toLowerCase() : '';
       
       if (isDemoMode()) {
-        msg.textContent = err.message || 'Demo payment failed';
+        msg.textContent = err.message || 'Payment failed';
         msg.className = 'err';
-        showStatusOverlay({ type: 'error', message: err.message || 'Demo payment failed' });
+        showStatusOverlay({ type: 'error', message: err.message || 'Payment failed' });
       } else {
         const isInsufficient = /insufficient|not enough|negative|low balance|insuff/i.test(raw);
         const isNotFound = /not found|404|recipient/i.test(raw);

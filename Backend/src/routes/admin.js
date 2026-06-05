@@ -12,6 +12,7 @@ const {
   getSettings,
   updateSettings,
   toggleBlockUser,
+  deleteUser,
   listAuditLogs
 } = require('../controllers/adminController');
 
@@ -27,6 +28,7 @@ router.post('/adjust-balance', adjustBalance);
 router.get('/settings', getSettings);
 router.post('/settings', updateSettings);
 router.post('/users/:id/block', toggleBlockUser);
+router.delete('/users/:id', deleteUser);
 router.get('/audit-logs', listAuditLogs);
 
 module.exports = router;

@@ -32,13 +32,15 @@ export async function renderAdmin(tab = 'users') {
         }
         .user-row-card > div:last-child {
           width: 100% !important;
-          grid-template-columns: 1fr 1fr !important;
+          grid-template-columns: 1fr 1fr 1fr 1fr !important;
         }
         .user-row-card > div:last-child > div {
           display: none !important;
         }
         .user-row-card > div:last-child button {
           width: 100% !important;
+          font-size: 10px !important;
+          padding: 6px 4px !important;
         }
       }
     `;
@@ -196,14 +198,17 @@ async function renderUsersTab() {
               </div>
               <div style="margin-top: 8px; font-weight: 800; font-size: 15px; color: #fff; background: linear-gradient(135deg, #fff, #e2e8f0); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${formatCurrency(u.balance)}</div>
             </div>
-            <div style="display: grid; grid-template-columns: repeat(3, 110px); gap: 8px; align-items: center; flex-shrink: 0;">
+            <div style="display: grid; grid-template-columns: repeat(4, 110px); gap: 8px; align-items: center; flex-shrink: 0;">
               <button class="small-btn solid btn-award-reward" data-user-id="${u._id}" data-user-name="${escapeHtml(u.name || u.email)}" style="padding: 6px 12px; font-size: 11.5px; font-weight: 600; width: 110px; border-radius: 8px;">Award Reward</button>
               <button class="small-btn ghost btn-adjust-balance" data-user-id="${u._id}" data-user-name="${escapeHtml(u.name || u.email)}" style="padding: 6px 12px; font-size: 11.5px; font-weight: 600; border-color: rgba(255,255,255,0.08); color: var(--accent2); width: 110px; border-radius: 8px;">Adjust Bal</button>
               ${u.role !== 'admin' ? `
                 <button class="small-btn ghost btn-toggle-block" data-user-id="${u._id}" data-blocked="${u.isBlocked || false}" style="padding: 6px 12px; font-size: 11.5px; width: 110px; border-radius: 8px; border-color: rgba(255,255,255,0.08); color: ${u.isBlocked ? '#00d26a' : 'var(--danger)'}; font-weight: 600;">
                   ${u.isBlocked ? 'Unblock' : 'Block'}
                 </button>
-              ` : `<div style="width: 110px;"></div>`}
+                <button class="small-btn solid btn-delete-user" data-user-id="${u._id}" data-user-email="${escapeHtml(u.email)}" style="padding: 6px 12px; font-size: 11.5px; width: 110px; border-radius: 8px; background: var(--danger); border: none; color: #fff; font-weight: 600;">
+                  Delete
+                </button>
+              ` : `<div style="grid-column: span 2;"></div>`}
             </div>
           </div>
         `;
@@ -222,6 +227,23 @@ async function renderUsersTab() {
               renderUsersTab();
             } catch (err) {
               showToast(err.message || 'Action failed', 'err');
+            }
+          }
+        });
+      });
+
+      // Bind delete actions
+      listEl.querySelectorAll('.btn-delete-user').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const userId = e.target.getAttribute('data-user-id');
+          const email = e.target.getAttribute('data-user-email');
+          if (confirm(`CRITICAL WARNING:\nAre you sure you want to permanently DELETE the user account '${email}'?\nThis action cannot be undone.`)) {
+            try {
+              await apiFetch(`/admin/users/${userId}`, { method: 'DELETE' });
+              showToast('User deleted successfully', 'ok');
+              renderUsersTab();
+            } catch (err) {
+              showToast(err.message || 'Deletion failed', 'err');
             }
           }
         });
