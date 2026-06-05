@@ -583,3 +583,12 @@ if (!CSS.supports('(animation-timeline: view()) and (animation-range: entry)')) 
   }
 }
 
+// Register Service Worker for PWA installation support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('Service Worker registered successfully:', reg.scope))
+      .catch(err => console.warn('Service Worker registration failed:', err));
+  });
+}
+

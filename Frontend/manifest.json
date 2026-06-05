@@ -1,0 +1,19 @@
+{
+  "name": "PayURupee",
+  "short_name": "PayURupee",
+  "description": "Secure, Glassmorphic E-Wallet & Savings Platform",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#08080a",
+  "theme_color": "#08080a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
