@@ -8,10 +8,170 @@
  * 2. Dynamically loads view templates (using dynamic ES imports) only when requested,
  *    minimizing application startup load times.
  * 3. Handles scroll resets and mobile drop-down menu cleanups on route transitions.
+ * 4. Manages in-app back navigation history stack.
+ * 5. Shows a double-press exit confirmation when user presses back on the root page.
  */
 
 import { store, logout } from './store.js';
 import { apiFetch } from './api.js';
+
+// ---------------------------------------------------------------------------
+// Navigation History Stack
+// ---------------------------------------------------------------------------
+
+/**
+ * Internal navigation history stack.
+ * Each entry is { route, params } pushed every time goto() is called.
+ */
+const _navHistory = [];
+
+/**
+ * Tracks whether the user pressed back once already (for exit double-confirm).
+ * Resets after 2 seconds.
+ */
+let _backPressedOnce = false;
+let _backPressTimer = null;
+
+/** Root routes where pressing back should trigger the exit prompt. */
+const ROOT_ROUTES = new Set(['login', 'register', 'dashboard']);
+
+/**
+ * Shows a toast message at the bottom of the screen.
+ * Used for the "Press back again to exit" notification.
+ */
+function showExitToast(message) {
+  // Remove any existing exit toast
+  const existing = document.getElementById('exit-toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'exit-toast';
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
+  toast.textContent = message;
+
+  Object.assign(toast.style, {
+    position: 'fixed',
+    bottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'rgba(30, 30, 40, 0.95)',
+    color: '#fff',
+    padding: '12px 24px',
+    borderRadius: '24px',
+    fontSize: '14px',
+    fontWeight: '500',
+    zIndex: '99999',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    pointerEvents: 'none',
+    opacity: '0',
+    transition: 'opacity 0.2s ease',
+    whiteSpace: 'nowrap',
+  });
+
+  document.body.appendChild(toast);
+
+  // Animate in
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+  });
+
+  // Animate out after 2 seconds
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 250);
+  }, 2000);
+}
+
+/**
+ * Attempts to close the PWA / browser tab.
+ * In standalone PWA mode window.close() is blocked by most browsers,
+ * so we fall back to navigating to a blank page (effective close on Android WebView / TWA).
+ */
+function exitApp() {
+  try {
+    window.close();
+  } catch (_) {}
+  // Fallback for Android TWA / standalone PWA
+  setTimeout(() => {
+    try { history.go(-(history.length)); } catch (_) {}
+  }, 80);
+}
+
+/**
+ * Handles the system/browser back button or gesture.
+ * - If a modal / sheet overlay is open, close it first.
+ * - If there's a previous route in the in-app stack, navigate back to it.
+ * - If already on a root page, show a toast; a second press within 2 s exits.
+ */
+function handleBackPress() {
+  // 1. Close any open overlay (profile sheet, modals, notifications dropdown, etc.)
+  const profileSheet = document.getElementById('profile-sheet-mob');
+  if (profileSheet && !profileSheet.classList.contains('hidden')) {
+    profileSheet.classList.add('hidden');
+    // Re-push a dummy history entry so the next back press stays in the app
+    history.pushState({ _app: true, route: _navHistory[_navHistory.length - 1]?.route }, '');
+    return;
+  }
+
+  const notifDropdown = document.getElementById('notifications-dropdown');
+  if (notifDropdown && !notifDropdown.classList.contains('hidden')) {
+    notifDropdown.classList.add('hidden');
+    history.pushState({ _app: true, route: _navHistory[_navHistory.length - 1]?.route }, '');
+    return;
+  }
+
+  // Close any open modal (elements with class 'modal-overlay' that are visible)
+  const openModal = document.querySelector('.modal-overlay:not(.hidden)');
+  if (openModal) {
+    // Try firing its close button
+    const closeBtn = openModal.querySelector('[id*="close"], [id*="cancel"], .modal-close, .btn-close');
+    if (closeBtn) closeBtn.click();
+    else openModal.classList.add('hidden');
+    history.pushState({ _app: true, route: _navHistory[_navHistory.length - 1]?.route }, '');
+    return;
+  }
+
+  // 2. Navigate within the in-app history stack
+  if (_navHistory.length > 1) {
+    _navHistory.pop(); // Remove current route
+    const prev = _navHistory[_navHistory.length - 1];
+    _navHistory.pop(); // goto() will re-push it
+    goto(prev.route, prev.params);
+    return;
+  }
+
+  // 3. On root page — show exit confirmation toast
+  const currentRoute = _navHistory[0]?.route || 'login';
+  if (ROOT_ROUTES.has(currentRoute)) {
+    if (_backPressedOnce) {
+      // Second press — exit the app
+      clearTimeout(_backPressTimer);
+      _backPressedOnce = false;
+      exitApp();
+    } else {
+      // First press — warn the user
+      _backPressedOnce = true;
+      showExitToast('Press back again to exit');
+      // Re-push state so we get another popstate on next back press
+      history.pushState({ _app: true, route: currentRoute }, '');
+      _backPressTimer = setTimeout(() => {
+        _backPressedOnce = false;
+      }, 2000);
+    }
+  }
+}
+
+// Listen for the browser/system back button (popstate fires on history.back())
+window.addEventListener('popstate', (e) => {
+  // Only intercept events that belong to our app-managed history entries
+  if (e.state && e.state._app) {
+    handleBackPress();
+  }
+});
 
 /**
  * Route controller. Clears mobile menus, resets page scroll, and loads the respective
@@ -33,7 +193,12 @@ export function goto(route, params = {}) {
     window.__currentViewCleanup = null;
   }
 
-  
+  // Push route onto in-app history stack
+  _navHistory.push({ route, params });
+
+  // Push a browser history state entry so popstate fires on back button/gesture
+  history.pushState({ _app: true, route }, '');
+
   // Collapse navigation bar menus if open (useful on mobile sizing)
   closeMobileMenu();
   
