@@ -2,7 +2,7 @@
   "name": "PayURupee",
   "short_name": "PayURupee",
   "description": "Secure, Glassmorphic E-Wallet & Savings Platform",
-  "start_url": "/index.html",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#08080a",
