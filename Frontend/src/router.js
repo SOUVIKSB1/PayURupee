@@ -32,6 +32,12 @@ const _navHistory = [];
 let _backPressedOnce = false;
 let _backPressTimer = null;
 
+/**
+ * Set to true while goto() is running so the pushState inside goto()
+ * does not re-trigger the popstate handler in an unexpected way.
+ */
+let _suppressPopstate = false;
+
 /** Root routes where pressing back should trigger the exit prompt. */
 const ROOT_ROUTES = new Set(['login', 'register', 'dashboard']);
 
@@ -40,7 +46,6 @@ const ROOT_ROUTES = new Set(['login', 'register', 'dashboard']);
  * Used for the "Press back again to exit" notification.
  */
 function showExitToast(message) {
-  // Remove any existing exit toast
   const existing = document.getElementById('exit-toast');
   if (existing) existing.remove();
 
@@ -74,12 +79,12 @@ function showExitToast(message) {
 
   document.body.appendChild(toast);
 
-  // Animate in
+  // Double rAF to ensure the opacity transition actually plays
   requestAnimationFrame(() => {
-    toast.style.opacity = '1';
+    requestAnimationFrame(() => { toast.style.opacity = '1'; });
   });
 
-  // Animate out after 2 seconds
+  // Animate out after 2 seconds then remove
   setTimeout(() => {
     toast.style.opacity = '0';
     setTimeout(() => toast.remove(), 250);
@@ -88,89 +93,90 @@ function showExitToast(message) {
 
 /**
  * Attempts to close the PWA / browser tab.
- * In standalone PWA mode window.close() is blocked by most browsers,
- * so we fall back to navigating to a blank page (effective close on Android WebView / TWA).
+ * window.close() is blocked in standalone PWA; falls back to
+ * collapsing the entire history stack (works in Android TWA / custom tabs).
  */
 function exitApp() {
-  try {
-    window.close();
-  } catch (_) {}
-  // Fallback for Android TWA / standalone PWA
+  try { window.close(); } catch (_) {}
   setTimeout(() => {
-    try { history.go(-(history.length)); } catch (_) {}
+    try { history.go(-(history.length + 1)); } catch (_) {}
   }, 80);
 }
 
 /**
  * Handles the system/browser back button or gesture.
- * - If a modal / sheet overlay is open, close it first.
- * - If there's a previous route in the in-app stack, navigate back to it.
- * - If already on a root page, show a toast; a second press within 2 s exits.
+ *
+ * Priority:
+ *  1. Dismiss any open overlay (profile sheet, modal, notifications).
+ *  2. Navigate to the previous in-app route.
+ *  3. On a root page: first press shows a toast; second press exits the app.
+ *
+ * After each interception a new history entry is pushed so the NEXT
+ * back press also fires popstate instead of letting the browser navigate away.
  */
 function handleBackPress() {
-  // 1. Close any open overlay (profile sheet, modals, notifications dropdown, etc.)
+  // ── 1. Dismiss open overlays ─────────────────────────────────────────────
   const profileSheet = document.getElementById('profile-sheet-mob');
   if (profileSheet && !profileSheet.classList.contains('hidden')) {
     profileSheet.classList.add('hidden');
-    // Re-push a dummy history entry so the next back press stays in the app
-    history.pushState({ _app: true, route: _navHistory[_navHistory.length - 1]?.route }, '');
+    history.pushState({ _app: true }, '');
     return;
   }
 
   const notifDropdown = document.getElementById('notifications-dropdown');
   if (notifDropdown && !notifDropdown.classList.contains('hidden')) {
     notifDropdown.classList.add('hidden');
-    history.pushState({ _app: true, route: _navHistory[_navHistory.length - 1]?.route }, '');
+    history.pushState({ _app: true }, '');
     return;
   }
 
-  // Close any open modal (elements with class 'modal-overlay' that are visible)
   const openModal = document.querySelector('.modal-overlay:not(.hidden)');
   if (openModal) {
-    // Try firing its close button
     const closeBtn = openModal.querySelector('[id*="close"], [id*="cancel"], .modal-close, .btn-close');
     if (closeBtn) closeBtn.click();
     else openModal.classList.add('hidden');
-    history.pushState({ _app: true, route: _navHistory[_navHistory.length - 1]?.route }, '');
+    history.pushState({ _app: true }, '');
     return;
   }
 
-  // 2. Navigate within the in-app history stack
+  // ── 2. Navigate back in in-app history ───────────────────────────────────
   if (_navHistory.length > 1) {
-    _navHistory.pop(); // Remove current route
+    _navHistory.pop();                        // remove current
     const prev = _navHistory[_navHistory.length - 1];
-    _navHistory.pop(); // goto() will re-push it
-    goto(prev.route, prev.params);
+    _navHistory.pop();                        // goto() will re-push it
+    goto(prev.route, prev.params);            // goto sets _suppressPopstate
     return;
   }
 
-  // 3. On root page — show exit confirmation toast
-  const currentRoute = _navHistory[0]?.route || 'login';
+  // ── 3. Already on root page — double-press exit ──────────────────────────
+  const currentRoute = (_navHistory[0] && _navHistory[0].route) || 'login';
   if (ROOT_ROUTES.has(currentRoute)) {
     if (_backPressedOnce) {
-      // Second press — exit the app
       clearTimeout(_backPressTimer);
       _backPressedOnce = false;
       exitApp();
     } else {
-      // First press — warn the user
       _backPressedOnce = true;
       showExitToast('Press back again to exit');
-      // Re-push state so we get another popstate on next back press
-      history.pushState({ _app: true, route: currentRoute }, '');
-      _backPressTimer = setTimeout(() => {
-        _backPressedOnce = false;
-      }, 2000);
+      // Keep an entry in browser history so next back press fires popstate
+      history.pushState({ _app: true }, '');
+      _backPressTimer = setTimeout(() => { _backPressedOnce = false; }, 2000);
     }
   }
 }
 
-// Listen for the browser/system back button (popstate fires on history.back())
-window.addEventListener('popstate', (e) => {
-  // Only intercept events that belong to our app-managed history entries
-  if (e.state && e.state._app) {
-    handleBackPress();
-  }
+// ---------------------------------------------------------------------------
+// Replace the very first (page-load) history entry with our sentinel.
+// Without this, pressing back from the FIRST goto() entry would pop to the
+// browser's original null-state entry and popstate would have e.state === null,
+// causing the handler to silently skip it and the browser to navigate away.
+// ---------------------------------------------------------------------------
+history.replaceState({ _app: true }, '');
+
+// Intercept ALL popstate events (back button / swipe gesture)
+window.addEventListener('popstate', () => {
+  if (_suppressPopstate) return;
+  handleBackPress();
 });
 
 /**
@@ -196,8 +202,11 @@ export function goto(route, params = {}) {
   // Push route onto in-app history stack
   _navHistory.push({ route, params });
 
-  // Push a browser history state entry so popstate fires on back button/gesture
+  // Push a browser history state entry so popstate fires on back button/gesture.
+  // Suppress the popstate listener while we do this so it doesn't self-trigger.
+  _suppressPopstate = true;
   history.pushState({ _app: true, route }, '');
+  _suppressPopstate = false;
 
   // Collapse navigation bar menus if open (useful on mobile sizing)
   closeMobileMenu();
